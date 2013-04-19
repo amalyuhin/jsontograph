@@ -26,5 +26,16 @@
 
   <build>
     <finalName>jsOntoGraph</finalName>
+
+    <plugins>
+      <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <configuration>
+              <webappDirectory>C:\Program Files\apache-tomcat\webapps\jsOntoGraph</webappDirectory>
+              <!--<outputDirectory>C:\Program Files\apache-tomcat\webapps\</outputDirectory>-->
+          </configuration>
+      </plugin>
+    </plugins>
   </build>
 </project>
