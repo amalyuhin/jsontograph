@@ -1,0 +1,54 @@
+html { height: 100%; }
+body { 
+  height: 100%; 
+  width: 100%; 
+  margin: 0;
+  padding: 0;
+}
+
+#wrapper {
+  clear: both;
+  min-height: 100%;
+  overflow: hidden;
+  height: auto !important;
+}
+
+#main {
+  width: 70%;
+  float: left;
+}
+
+#myCanvas {
+  margin: 10px;
+}
+
+#loader {
+    background-color: #c6c6c6;
+    position: absolute;
+    width: 70%;
+    height: 90%;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+    text-align: center;
+    z-index: 1000;
+    opacity: 0.5;
+    filter: progid:DXImageTransform.Microsoft.Alpha(opacity=80);
+}
+#loader img{
+    position: absolute;
+    margin-top: 47%;
+}
+
+#tool_bar {
+  width: 30%;
+  height: 800px;
+  float: right;
+}
+
+footer {
+  background: #333;
+  clear: both;
+  height: 100px;
+  margin-top: -100px;
+}
