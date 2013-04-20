@@ -17,4 +17,13 @@
     <servlet-name>Index Servlet</servlet-name>
     <url-pattern>/index</url-pattern>
   </servlet-mapping>
+
+  <servlet>
+    <servlet-name>Data Servlet</servlet-name>
+    <servlet-class>ru.amalyuhin.DataServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Data Servlet</servlet-name>
+    <url-pattern>/data</url-pattern>
+  </servlet-mapping>
 </web-app>
