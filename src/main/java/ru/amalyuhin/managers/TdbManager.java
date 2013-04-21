@@ -48,7 +48,6 @@ public class TdbManager {
         nm.close();
 
         dataset.commit();
-        dataset.close();
     }
 
     public Model getNamedModel(String name) {
@@ -60,5 +59,9 @@ public class TdbManager {
         QueryExecution qExec = QueryExecutionFactory.create(query, model);
 
         return qExec.execSelect();
+    }
+
+    public void close() {
+        dataset.close();
     }
 }

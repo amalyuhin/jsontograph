@@ -6,9 +6,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 
 /**
@@ -19,6 +17,7 @@ import java.net.URL;
  * To change this template use File | Settings | File Templates.
  */
 public class DataServlet extends HttpServlet {
+    private final String BASE_DIR = getServletContext().getRealPath("/");
 
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         final String dataDir = "/data/";
@@ -31,10 +30,19 @@ public class DataServlet extends HttpServlet {
 
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         final String dataDir = "/data/";
-        String fileName = "Thesaurus.owl";
+        String fileName = "wine.owl";
 
-        URL tdbUrl = this.getClass().getClassLoader().getResource("Object.class");
+        try {
+            String tdbDir = BASE_DIR + "tdb";
 
-        resp.getOutputStream().print(tdbUrl.toString());
+            TdbManager tdbManager = new TdbManager(tdbDir);
+            tdbManager.addNamedModel(dataDir + fileName);
+            tdbManager.close();
+
+            resp.getOutputStream().println("Ok!");
+
+        } catch (Exception e) {
+            resp.getOutputStream().println(e.getMessage());
+        }
     }
 }
