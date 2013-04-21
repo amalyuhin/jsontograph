@@ -31,6 +31,14 @@
         </section>
 
         <aside id="tool_bar">
+            <a class="link toggle-btn" href="javascript:void(0)">Загрузить файл</a>
+            <div class="toggle-block">
+                <form id="load_onto_form" action="data" method="post" enctype="multipart/form-data">
+                    <label for="onto_file">Выберете файл<label>
+                    <input id="onto_file" type="file" name="onto_file" />
+                    <input type="submit" value="Загрузить" />
+                </form>
+            </div>
             <form id="select_file_form" action="process" method="get">
                 <div>
                     <% String[] files = (String[]) request.getAttribute("ontFiles"); %>
@@ -91,9 +99,21 @@
                 }
             });*/
 
-
             //init();
 
+
+            $('.toggle-btn').click(function(event) {
+                var block = $(this).next('.toggle-block');
+                var isVisible = block.is(":visible");
+
+                if (isVisible) {
+                    block.slideUp();
+                } else {
+                    block.slideDown();
+                }
+
+                event.preventDefault();
+            });
 
             $('#select_file_form').submit(function(event){
                 event.preventDefault();

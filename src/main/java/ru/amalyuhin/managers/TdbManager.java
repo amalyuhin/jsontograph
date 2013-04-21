@@ -15,18 +15,11 @@ import java.io.InputStream;
  */
 public class TdbManager {
 
-    private String tdbDirectory;
     private Dataset dataset;
 
-
     public TdbManager(String tdbDir) {
-        tdbDirectory = tdbDir;
-        dataset = TDBFactory.createDataset(tdbDirectory);
+        dataset = TDBFactory.createDataset(tdbDir);
     }
-
-   /* public static Dataset getDataset() {
-        return TDBFactory.createDataset(TDB_DIRECTORY);
-    }*/
 
     public void addNamedModel(String source) {
         dataset.begin(ReadWrite.WRITE);
@@ -48,6 +41,10 @@ public class TdbManager {
         nm.close();
 
         dataset.commit();
+    }
+
+    public void removeNamedModel(String name) {
+        dataset.removeNamedModel(name);
     }
 
     public Model getNamedModel(String name) {
