@@ -1,6 +1,8 @@
 package ru.amalyuhin;
 
+import com.hp.hpl.jena.query.*;
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -20,9 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Created with IntelliJ IDEA.
@@ -50,12 +50,11 @@ public class DataServlet extends HttpServlet {
         if (null != model) {
             String result;
 
-            result = parseModel(model);
-            /*if (req.getParameterMap().containsKey("query")) {
+            if (req.getParameterMap().containsKey("query")) {
                 result = parseModelByQuery(model, req.getParameter("query"));
             } else {
                 result = parseModel(model);
-            }*/
+            }
 
             output.print(result);
 
@@ -133,6 +132,88 @@ public class DataServlet extends HttpServlet {
         json.put("links", links);
 
         return json.toJSONString();
+    }
+
+    private String parseModelByQuery(Model model, String queryString) {
+        Query query = QueryFactory.create(queryString);
+        QueryExecution qe = QueryExecutionFactory.create(query, model);
+
+        List<String> nodes = new ArrayList<String>();
+        List<Map<String, String>> links = new ArrayList<Map<String, String>>();
+
+        try {
+            ResultSet results = qe.execSelect() ;
+
+            while (results.hasNext()) {
+                QuerySolution solution = results.nextSolution();
+
+                RDFNode s = solution.get("s");
+                RDFNode o = solution.get("o");
+                RDFNode p = solution.get("p");
+
+                /*if (o.isResource()) {
+                    for (StmtIterator iter = o.asResource().listProperties(); iter.hasNext(); ) {
+                        System.out.println(o.toString());
+                        System.out.println(iter.next().toString());
+                        System.out.println("===========================================================");
+                    }
+                }*/
+
+                String sTitle = getLabel(s);
+                String oTitle = getLabel(o);
+                String pTitle = getLabel(p);
+
+                if (!nodes.contains((sTitle))) {
+                    nodes.add(sTitle);
+                }
+
+                if (!nodes.contains((oTitle))) {
+                    nodes.add(oTitle);
+                }
+
+                if (!pTitle.equals("")) {
+                    Map<String, String> edgeMap = new HashMap<String, String>();
+
+                    edgeMap.put("from", String.valueOf(nodes.indexOf(sTitle)));
+                    edgeMap.put("to", String.valueOf(nodes.indexOf(oTitle)));
+                    edgeMap.put("type", pTitle);
+
+                    links.add(edgeMap);
+                }
+            }
+        } catch (Exception e) {
+            return errorJsonResponse(e.getMessage());
+        } finally {
+            qe.close();
+        }
+
+        JSONExtendedObject json = new JSONExtendedObject();
+        JSONArray jsonNodes = JSONExtendedArray.fromNodes(nodes);
+
+        json.put("status", "success");
+        json.put("nodes", jsonNodes);
+        json.put("links", links);
+
+        return json.toJSONString();
+    }
+
+    private String getLabel(RDFNode node)
+    {
+        String label;
+
+        if (null == node) {
+            return "";
+        }
+
+        if (node.isResource()) {
+            label = (node.asResource().getLocalName() != null) ? node.asResource().getLocalName() : node.asResource().toString();
+        } else if (node.isLiteral()) {
+            label = (node.asLiteral().getLexicalForm() != null) ? node.asLiteral().getLexicalForm() : node.asLiteral().toString();
+        } else {
+            label = node.toString();
+        }
+
+        return label;
     }
 
     private String errorJsonResponse(String message) {
