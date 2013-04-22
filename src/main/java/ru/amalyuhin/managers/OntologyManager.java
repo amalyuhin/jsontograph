@@ -17,8 +17,6 @@ import java.util.Map;
  */
 public class OntologyManager {
 
-    private static List<String> _nodes = null;
-
     /**
      * Load ontology from file
      *
@@ -39,16 +37,14 @@ public class OntologyManager {
      * @return
      */
     public static List<String> getNodes(Model model) {
-        if (null == _nodes) {
-            _nodes = new ArrayList<String>();
+        List<String> nodes = new ArrayList<String>();
 
-            for (ResIterator i = model.listSubjects(); i.hasNext(); ) {
-                Resource r = i.next();
-                _nodes.add(getLabel(r));
-            }
+        for (ResIterator i = model.listSubjects(); i.hasNext(); ) {
+            Resource r = i.next();
+            nodes.add(getLabel(r));
         }
 
-        return _nodes;
+        return nodes;
     }
 
     /**
@@ -57,15 +53,15 @@ public class OntologyManager {
      * @param model
      * @return
      */
-    public static List<Map<String, String>> getLinks(Model model) {
+    public static List<Map<String, String>> getLinks(Model model, List<String> nodes) {
         List<Map<String, String>> links = new ArrayList<Map<String, String>>();
 
         for (StmtIterator i = model.listStatements(null, null, (RDFNode) null); i.hasNext(); ) {
             Statement stmt = i.nextStatement();
             Map<String, String> map = new HashMap<String, String>();
 
-            Integer fromIndex = _nodes.indexOf(getLabel(stmt.getSubject()));
-            Integer toIndex = _nodes.indexOf(getLabel(stmt.getObject()));
+            Integer fromIndex = nodes.indexOf(getLabel(stmt.getSubject()));
+            Integer toIndex = nodes.indexOf(getLabel(stmt.getObject()));
 
             if (fromIndex != -1 && toIndex != -1) {
                 map.put("from", String.valueOf(fromIndex));

@@ -64,7 +64,11 @@ Graph.prototype = {
         var index = this.vertices.length;
 
         this.vertices[index] = v;
-        v.id = index;
+
+        if (!v.id) {
+            v.id = index;
+        }
+
         v.setWeight(Math.floor(1 + Math.random() * 5));
 
         this.verticesCount++;
@@ -141,9 +145,23 @@ Graph.prototype = {
 
     hasEdge: function(v_id, u_id) {
         return (
-            (this.edgesMap[v_id] != undefined && this.edgesMap[v_id][u_id] === true) ||
-            (this.edgesMap[u_id] != undefined && this.edgesMap[u_id][v_id] === true)
+            (typeof(this.edgesMap[v_id]) !== 'undefined' && this.edgesMap[v_id][u_id] === true) ||
+            (typeof(this.edgesMap[u_id]) !== 'undefined' && this.edgesMap[u_id][v_id] === true)
         );
+    },
+
+    getEdge: function(v_id, u_id) {
+        var edgesLength = this.getEdgesCount();
+
+        for (var i=0; i<edgesLength; i++) {
+            var e = this.edges[i];
+
+            if ((e.v.id === v_id && e.u.id === u_id) || (e.v.id === u_id && e.u.id === v_id)) {
+                return e;
+            }
+        }
+
+        return null;
     },
 
     getVertexByLabel: function(label) {
@@ -221,16 +239,20 @@ function Vertex(label, options) {
         selectedFillStyle: 'red'        
     };
 
-    this.id = '';
+    this.id;
     this.label = label;
     this.weight = 0;
     this.isSelected = false;
     this.isHovered = false;
 
-    if (typeof options == 'object') {
+    if (typeof(options) === 'object') {
         this.options = $.extend(defaults, options);
     } else {
         this.options = defaults;
+    }
+
+    if (typeof(this.options.id) === 'number' && this.options.id % 1 === 0) {
+        this.id = this.options.id;
     }
 
     this.radius = this.options.radius;
@@ -322,12 +344,13 @@ function Edge(v, u, options) {
     this.u = u;
     this.isSelected = false;
 
-    if (typeof options == 'object') {
+    if (typeof(options) === 'object') {
         if (!options.hasOwnProperty('lineWidth') && options.hasOwnProperty('weight')) {
             options.lineWidth = options.weight;
         }
 
         this.options = $.extend(defaults, options);
+
     } else {
         this.options = defaults;
     }
@@ -345,7 +368,7 @@ Edge.prototype = {
 
 
 function clone(obj){
-    if(obj == null || typeof(obj) != 'object'){
+    if(obj == null || typeof(obj) !== 'object'){
         return obj;
     }
 

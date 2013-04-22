@@ -24,31 +24,41 @@ public class TdbManager {
     public void addNamedModel(String source) {
         dataset.begin(ReadWrite.WRITE);
 
-        Model nm = dataset.getNamedModel(source);
-
         try {
+            Model nm = dataset.getNamedModel(source);
+
             InputStream im = TdbManager.class.getResourceAsStream(source);
             if (null == im) {
                 throw new Exception("File " + source + " not found.");
             }
 
             nm.read(im, "");
+            nm.close();
 
         } catch (Exception e) {
             e.printStackTrace();
+
+        } finally {
+            dataset.commit();
+            dataset.end();
+            dataset.close();
         }
-
-        nm.close();
-
-        dataset.commit();
     }
 
     public void removeNamedModel(String name) {
+        dataset.begin(ReadWrite.WRITE);
         dataset.removeNamedModel(name);
+        dataset.end();
+        dataset.close();
     }
 
     public Model getNamedModel(String name) {
-        return dataset.getNamedModel(name);
+        dataset.begin(ReadWrite.READ);
+        Model model = dataset.getNamedModel(name);
+        dataset.end();
+        dataset.close();
+
+        return model;
     }
 
     public static ResultSet executeQuery(String queryString, Model model) {

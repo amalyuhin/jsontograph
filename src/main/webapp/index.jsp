@@ -39,7 +39,7 @@
                     <input type="submit" value="Загрузить" />
                 </form>
             </div>
-            <form id="select_file_form" action="process" method="get">
+            <form id="select_file_form" action="data" method="get">
                 <div>
                     <% String[] files = (String[]) request.getAttribute("ontFiles"); %>
 
@@ -149,7 +149,7 @@
                     data: data,
                     dataType: 'json',
                     success: function(json) {
-                        init(graph, json);
+                        init(json);
                     },
                     complete: function(){
                         $('#loader').hide();
@@ -165,21 +165,21 @@
 
             graph = new Graph();
 
-            for (var i=0; i<data.vertices.length; i++) {
-                var v = new Vertex(data.vertices[i]);
-                graph.addVertex(v);
+            for (var i=0; i<data.nodes.length; i++) {
+                var node = data.nodes[i];
+                graph.addVertex(new Vertex(node.label, { 'id': node.id }));
             }
 
             var lineColors = [];
-            for (var j=0; j<data.edges.length; j++) {
-                var v = graph.getVertexByLabel(data.edges[j].from);
-                var u = graph.getVertexByLabel(data.edges[j].to);
+            for (var j=0; j<data.links.length; j++) {
+                var v = graph.vertices[data.links[j].from];
+                var u = graph.vertices[data.links[j].to];
 
                 if (v && u) {
-                    var lc = lineColors[data.edges[j].type];
+                    var lc = lineColors[data.links[j].type];
                     if (!lc) {
                         lc = "rgba("+Math.round(Math.random()*255)+", "+Math.round(Math.random()*255)+", "+Math.round(Math.random()*255)+", .6)";
-                        lineColors[data.edges[j].type] = lc;
+                        lineColors[data.links[j].type] = lc;
                     }
 
                     graph.addEdge(v, u, {lineColor: lc});

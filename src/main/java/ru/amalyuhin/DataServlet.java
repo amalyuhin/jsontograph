@@ -1,18 +1,27 @@
 package ru.amalyuhin;
 
+import com.hp.hpl.jena.rdf.model.Model;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import ru.amalyuhin.managers.OntologyManager;
 import ru.amalyuhin.managers.TdbManager;
+import ru.amalyuhin.utils.JSONExtendedArray;
+import ru.amalyuhin.utils.JSONExtendedObject;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -27,21 +36,34 @@ public class DataServlet extends HttpServlet {
 
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         final String BASE_DIR = getServletContext().getRealPath("/");
-        String fileName = "wine.owl";
+        final String TDB_DIR = BASE_DIR + "tdb";
 
-        try {
-            String tdbDir = BASE_DIR + "tdb";
-            String file = DATA_DIR + "/" + fileName;
+        String fileName = req.getParameter("file");
+        String file = DATA_DIR + "/" + fileName;
 
-            TdbManager tdbManager = new TdbManager(tdbDir);
-            tdbManager.addNamedModel(file);
-            tdbManager.close();
+        resp.setHeader("Content-Type", "application/json");
+        ServletOutputStream output = resp.getOutputStream();
 
-            resp.getOutputStream().println("Ok!");
+        TdbManager tdbManager = new TdbManager(TDB_DIR);
+        Model model = tdbManager.getNamedModel(file);
 
-        } catch (Exception e) {
-            resp.getOutputStream().println(e.getMessage());
+        if (null != model) {
+            String result;
+
+            result = parseModel(model);
+            /*if (req.getParameterMap().containsKey("query")) {
+                result = parseModelByQuery(model, req.getParameter("query"));
+            } else {
+                result = parseModel(model);
+            }*/
+
+            output.print(result);
+
+        } else {
+            output.print(errorJsonResponse(String.format("Named model %s does not exist in TDB store.", file)));
         }
+
+
     }
 
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -97,5 +119,28 @@ public class DataServlet extends HttpServlet {
         }
 
         return uploadedFile;
+    }
+
+    private String parseModel(Model model) {
+        List<String> nodes = OntologyManager.getNodes(model);
+        List<Map<String, String>> links = OntologyManager.getLinks(model, nodes);
+
+        JSONExtendedObject json = new JSONExtendedObject();
+        JSONArray jsonNodes = JSONExtendedArray.fromNodes(nodes);
+
+        json.put("status", "success");
+        json.put("nodes", jsonNodes);
+        json.put("links", links);
+
+        return json.toJSONString();
+    }
+
+    private String errorJsonResponse(String message) {
+        JSONObject json = new JSONObject();
+
+        json.put("status", "error");
+        json.put("message", message);
+
+        return json.toJSONString();
     }
 }

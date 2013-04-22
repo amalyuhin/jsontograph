@@ -37,7 +37,7 @@ WalshawLayout.prototype = {
     getFirstNeighbor: function(id){
         var graph = this.graph;
         var verticesNb = graph.getVerticesCount();
-        var edgesNb = graph.getEdgesCount();
+        var edgesNb = graph.edges.length;
 
         for(var i=0; i<verticesNb; i++) {
             if(graph.vertices[i] == null ||  id === i || this.isMarked[i] === true) continue;
@@ -60,7 +60,8 @@ WalshawLayout.prototype = {
         var graph = this.graph;
         var neighbor = this.getFirstNeighbor(id);
         var verticesNb = graph.getVerticesCount();
-        var edgesNb = graph.getEdgesCount();
+        //var edgesNb = graph.getEdgesCount();
+        var edgesNb = graph.edges.length;
 
         if(neighbor === null) return neighbor;
 
@@ -204,7 +205,13 @@ WalshawLayout.prototype = {
                     if(i == j || !graph.vertices[j] || !g.vertices[j]) continue;
 
                     if(g.hasEdge(i, j) === true && graph.hasEdge(i, j) === false) {
-                        graph.addEdge(graph.vertices[i], graph.vertices[j]);
+                        var e = g.getEdge(i, j);
+
+                        if (e) {
+                            graph.addEdge(graph.vertices[i], graph.vertices[j], e.options);
+                        } else {
+                            graph.addEdge(graph.vertices[i], graph.vertices[j]);
+                        }
                     }
 
                     if (graph.hasEdge(i, j) === true && g.hasEdge(i, j) === false) {
@@ -219,6 +226,8 @@ WalshawLayout.prototype = {
                     graph.vertices[j].label = g.vertices[j].label;
                 }
             }
+
+            delete g;
 
             this.k = this.k * Math.sqrt(4/7);
         }
