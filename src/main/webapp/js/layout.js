@@ -6,13 +6,7 @@
  * To change this template use File | Settings | File Templates.
  */
 
-(function() {
-    var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
-        window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
-    window.requestAnimationFrame = requestAnimationFrame;
-})();
-
-function Layout(canvas, graph){
+function Layout(canvas, graph) {
     this.canvas = canvas;
     this.context = canvas[0].getContext("2d");
     this.canvasWidth = canvas[0].getAttribute('width');
@@ -26,105 +20,114 @@ function Layout(canvas, graph){
     this.originx = 0;
     this.originy = 0;
 
+    this.reqAnimId = null;
+
     this.eventListeners = [];
 }
 
 Layout.prototype = {
-    zoom: function(originx, originy, scale) {
+    zoom: function (originx, originy, scale) {
         this.scale = scale;
         this.originx = originx;
         this.originy = originy;
     },
 
-    clear: function(){
-        this.context.clearRect(this.originx, this.originy, this.canvasWidth/this.scale, this.canvasHeight/this.scale);
+    clear: function () {
+        this.context.clearRect(this.originx, this.originy, this.canvasWidth / this.scale, this.canvasHeight / this.scale);
     },
 
-    draw: function(){
+    draw: function () {
         var ctx = this.context;
         var verticesNb = this.graph.vertices.length;
 
-        for (var i=0; i<this.graph.edges.length; i++) {
-            var e = this.graph.edges[i];           
+        for (var i = 0; i < this.graph.edges.length; i++) {
+            var e = this.graph.edges[i];
 
             ctx.strokeStyle = e.options.lineColor;
             if (e.isSelected) {
                 ctx.globalAlpha = 1;
                 ctx.lineWidth = e.options.selectedLineWidth;
-            } else {                
-                ctx.lineWidth = e.options.lineWidth;                
-            }            
+            } else {
+                ctx.lineWidth = e.options.lineWidth;
+            }
+
             ctx.beginPath();
-            
+
             ctx.moveTo(e.v.pos.x, e.v.pos.y);
             ctx.lineTo(e.u.pos.x, e.u.pos.y);
 
             ctx.stroke();
-        }        
-              
+        }
+
         ctx.beginPath();
         ctx.textAlign = "center";
-        for (var i=0; i<verticesNb; i++ ) {
+        for (var i = 0; i < verticesNb; i++) {
             var v = this.graph.vertices[i];
 
             if (v == undefined) continue;
 
             var buffer = document.createElement('canvas');
-            buffer.width = 2*v.radius;
-            buffer.height = 2*v.radius;
-            var buffer_context = buffer.getContext('2d');  
+            buffer.width = 2 * v.radius;
+            buffer.height = 2 * v.radius;
+            var buffer_context = buffer.getContext('2d');
 
             buffer_context.arc(v.radius, v.radius, v.radius, 0, Math.PI * 2, false);
             if (v.isSelected) {
                 buffer_context.fillStyle = v.options.selectedFillStyle
             } else {
-                buffer_context.fillStyle = v.options.fillStyle;    
+                buffer_context.fillStyle = v.options.fillStyle;
             }
             buffer_context.fill();
 
             ctx.save();
-            ctx.translate(v.pos.x-v.radius, v.pos.y-v.radius);
-            ctx.drawImage(buffer, 0,0);
+            ctx.translate(v.pos.x - v.radius, v.pos.y - v.radius);
+            ctx.drawImage(buffer, 0, 0);
             ctx.restore();
-
-            /*if (v.isSelected) {
-                ctx.fillText(v.label, v.pos.x, v.pos.y-v.radius);
-            }  */          
         }
         ctx.stroke();
     },
 
-    redraw: function() {
+    redraw: function () {
         this.clear();
         this.draw();
     },
 
-    step: function(){
+    step: function () {
 
     },
 
-    run: function(){
+    run: function () {
         console.time('Algorithm execution');
+        console.profile();
 
         var self = this;
+        var animate = function () {
+            self.reqAnimId = requestAnimationFrame(animate);
 
-        self.animateInterval = setInterval(function(){
             self.clear();
             self.step();
             self.draw();
-        }, self.msec);
+        };
+
+        animate();
     },
 
-    stop: function(){
-        var self = this;
-        clearInterval(self.animateInterval);
-        console.timeEnd('Algorithm execution');
+    stop: function () {
+        /*var self = this;
+         clearInterval(self.animateInterval);
+         console.timeEnd('Algorithm execution');*/
+
+        if (this.reqAnimId) {
+            console.profileEnd();
+            cancelRequestAnimationFrame(this.reqAnimId);
+        }
     }
 };
 
 
-function inherit(Child, Parent){
-    var F = function () { };
+function inherit(Child, Parent) {
+    var F = function () {
+    };
     F.prototype = Parent.prototype;
     var f = new F();
 

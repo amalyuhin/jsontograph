@@ -10,32 +10,32 @@ function Vector(x, y) {
     this.y = y;
 }
 
-Vector.random = function() {
-    return new Vector(100+Math.random()*800, 100+Math.random()*700);
+Vector.random = function () {
+    return new Vector(100 + Math.random() * 800, 100 + Math.random() * 700);
 };
 
 Vector.prototype = {
-    add: function(v2) {
+    add: function (v2) {
         return new Vector(this.x + v2.x, this.y + v2.y);
     },
 
-    subtract: function(v2) {
+    subtract: function (v2) {
         return new Vector(this.x - v2.x, this.y - v2.y);
     },
 
-    multiply: function(n) {
+    multiply: function (n) {
         return new Vector(this.x * n, this.y * n);
     },
 
-    divide: function(n) {
+    divide: function (n) {
         return new Vector(this.x / n, this.y / n);
     },
 
-    magnitude: function() {
-        return Math.sqrt(this.x*this.x + this.y*this.y);
+    magnitude: function () {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
     },
 
-    normalise: function() {
+    normalise: function () {
         return this.divide(this.magnitude());
     }
 };
@@ -51,16 +51,16 @@ function Graph() {
     this.edgesMap = [];
 }
 
-Graph.prototype = {    
-    getVerticesCount: function() {
+Graph.prototype = {
+    getVerticesCount: function () {
         return this.verticesCount;
     },
 
-    getEdgesCount: function() {
+    getEdgesCount: function () {
         return this.edgesCount;
     },
 
-    addVertex: function(v) {
+    addVertex: function (v) {
         var index = this.vertices.length;
 
         this.vertices[index] = v;
@@ -74,7 +74,7 @@ Graph.prototype = {
         this.verticesCount++;
     },
 
-    addEdge: function(v, u, options) {
+    addEdge: function (v, u, options) {
         if (!this.hasEdge(v.id, u.id) && v.id != u.id) {
             this.edges[this.edges.length] = new Edge(v, u, options);
 
@@ -92,35 +92,35 @@ Graph.prototype = {
         }
     },
 
-    removeEdge: function(v_id, u_id) {
+    removeEdge: function (v_id, u_id) {
         var edgesLength = this.getEdgesCount;
-        for (var i=0; i<edgesLength; i++) {
+        for (var i = 0; i < edgesLength; i++) {
             if (!this.edges[i]) continue;
 
-            if ( (this.edges[i].v.id === v_id && this.edges[i].u.id === u_id) ||
-                 (this.edges[i].v.id === u_id && this.edges[i].u.id === v_id)
-            ) {
+            if ((this.edges[i].v.id === v_id && this.edges[i].u.id === u_id) ||
+                (this.edges[i].v.id === u_id && this.edges[i].u.id === v_id)
+                ) {
                 this.edges.splice(i, 1);
                 i--;
             }
         }
 
-        if(this.edgesMap[v_id]) {
+        if (this.edgesMap[v_id]) {
             this.edgesMap[v_id][u_id] = false;
         }
 
-        if(this.edgesMap[u_id]) {
+        if (this.edgesMap[u_id]) {
             this.edgesMap[u_id][v_id] = false;
         }
 
         this.edgesCount--;
     },
 
-    removeVertex: function(id) {
+    removeVertex: function (id) {
         delete this.vertices[id];
 
         var edgesLength = this.getEdgesCount();
-        for (var i=0; i<edgesLength; i++) {
+        for (var i = 0; i < edgesLength; i++) {
             if (!this.edges[i]) continue;
 
             if (this.edges[i].v.id === id || this.edges[i].u.id === id) {
@@ -130,12 +130,12 @@ Graph.prototype = {
         }
 
         var verticesLength = this.vertices.length;
-        for(var j=0; j<verticesLength; j++) {
-            if(this.edgesMap[id]) {
+        for (var j = 0; j < verticesLength; j++) {
+            if (this.edgesMap[id]) {
                 this.edgesMap[id][j] = false;
             }
 
-            if(this.edgesMap[j]) {
+            if (this.edgesMap[j]) {
                 this.edgesMap[j][id] = false;
             }
         }
@@ -143,17 +143,17 @@ Graph.prototype = {
         this.verticesCount--;
     },
 
-    hasEdge: function(v_id, u_id) {
+    hasEdge: function (v_id, u_id) {
         return (
             (typeof(this.edgesMap[v_id]) !== 'undefined' && this.edgesMap[v_id][u_id] === true) ||
-            (typeof(this.edgesMap[u_id]) !== 'undefined' && this.edgesMap[u_id][v_id] === true)
-        );
+                (typeof(this.edgesMap[u_id]) !== 'undefined' && this.edgesMap[u_id][v_id] === true)
+            );
     },
 
-    getEdge: function(v_id, u_id) {
+    getEdge: function (v_id, u_id) {
         var edgesLength = this.getEdgesCount();
 
-        for (var i=0; i<edgesLength; i++) {
+        for (var i = 0; i < edgesLength; i++) {
             var e = this.edges[i];
 
             if ((e.v.id === v_id && e.u.id === u_id) || (e.v.id === u_id && e.u.id === v_id)) {
@@ -164,9 +164,9 @@ Graph.prototype = {
         return null;
     },
 
-    getVertexByLabel: function(label) {
+    getVertexByLabel: function (label) {
         var verticesLength = this.verticesCount;
-        for(var i=0; i<verticesLength; i++) {
+        for (var i = 0; i < verticesLength; i++) {
             if (this.vertices[i].label == label) {
                 return this.vertices[i];
             }
@@ -175,54 +175,54 @@ Graph.prototype = {
         return null;
     },
 
-    selectVertex: function(vertex) {
+    selectVertex: function (vertex) {
         vertex.select();
 
         var edgesLength = this.getEdgesCount();
-        for (var i=0; i<edgesLength; i++) {
+        for (var i = 0; i < edgesLength; i++) {
             if (!this.edges[i]) continue;
 
             if (this.edges[i].v.id === vertex.id || this.edges[i].u.id === vertex.id) {
-                this.edges[i].select();       
+                this.edges[i].select();
             }
-        }    
+        }
     },
 
-    unselectVertex: function(vertex) {
+    unselectVertex: function (vertex) {
         vertex.unselect();
 
         var edgesLength = this.getEdgesCount();
-        for (var i=0; i<edgesLength; i++) {
+        for (var i = 0; i < edgesLength; i++) {
             if (!this.edges[i]) continue;
 
             var v = this.edges[i].v;
             var u = this.edges[i].u;
             if ((v.id === vertex.id || u.id === vertex.id) && !v.isSelected && !u.isSelected) {
-                this.edges[i].unselect();       
+                this.edges[i].unselect();
             }
-        }    
+        }
     }
 };
 
-Graph.random = function() {
+Graph.random = function () {
     var g = new Graph();
     //var verticesNb = Math.floor(150 + Math.random() * 100);
     var verticesNb = 100;
 
-    for(var i=0; i<verticesNb; i++) {
-        var v = new Vertex('Node_'+i);
+    for (var i = 0; i < verticesNb; i++) {
+        var v = new Vertex('Node_' + i);
         g.addVertex(v);
     }
 
-    for(var l=0; l<verticesNb; l++) {
-        for(var j=0; j<verticesNb; j++) {
-            var hasEdge = Math.floor(1+Math.random()*200);
+    for (var l = 0; l < verticesNb; l++) {
+        for (var j = 0; j < verticesNb; j++) {
+            var hasEdge = Math.floor(1 + Math.random() * 200);
 
             if (hasEdge != 5) {
                 continue;
             }
 
-            if(l != j) {
+            if (l != j) {
                 g.addEdge(g.vertices[l], g.vertices[j]);
             }
         }
@@ -236,10 +236,9 @@ function Vertex(label, options) {
     var defaults = {
         radius: 10,
         fillStyle: 'orange',
-        selectedFillStyle: 'red'        
+        selectedFillStyle: 'red'
     };
 
-    this.id;
     this.label = label;
     this.weight = 0;
     this.isSelected = false;
@@ -263,72 +262,72 @@ function Vertex(label, options) {
     this.events = [];
 }
 
-Vertex.prototype = {    
-    setWeight: function(weight) {
+Vertex.prototype = {
+    setWeight: function (weight) {
         this.weight = weight;
     },
 
-    getWeight: function() {
+    getWeight: function () {
         return this.weight;
     },
 
-    select: function() {
+    select: function () {
         this.isSelected = true;
     },
 
-    unselect: function() {
+    unselect: function () {
         this.isSelected = false;
     },
 
-    changePosition: function(x, y) {
+    changePosition: function (x, y) {
         this.pos.x = x;
-        this.pos.y = y;   
+        this.pos.y = y;
 
         this.dispatch('changePosition');
     },
 
-    changeDisp: function(x, y) {
+    changeDisp: function (x, y) {
         this.disp.x = x;
         this.disp.y = y;
 
         this.dispatch('changeDisp');
     },
 
-    addEventlistener: function(event, callback) {
-      this.events[event] = this.events[event] || [];
-      if (this.events[event]) {
-        this.events[event].push(callback);
-      }
-    },
-    
-    removeEventlistener: function(event, callback) {
-      if (this.events[event]) {
-        var listeners = this.events[event];
-
-        for ( var i = listeners.length-1; i>=0; --i ){
-          if ( listeners[i] === callback ) {
-            listeners.splice( i, 1 );
-            return true;
-          }
+    addEventlistener: function (event, callback) {
+        this.events[event] = this.events[event] || [];
+        if (this.events[event]) {
+            this.events[event].push(callback);
         }
-      }
-
-      return false;
     },
 
-    removeAllEventlisteners: function() {
-      this.events = [];  
+    removeEventlistener: function (event, callback) {
+        if (this.events[event]) {
+            var listeners = this.events[event];
+
+            for (var i = listeners.length - 1; i >= 0; --i) {
+                if (listeners[i] === callback) {
+                    listeners.splice(i, 1);
+                    return true;
+                }
+            }
+        }
+
+        return false;
     },
 
-    dispatch: function(event){
-      if (this.events[event]) {
-        var listeners = this.events[event], len = listeners.length;
+    removeAllEventlisteners: function () {
+        this.events = [];
+    },
 
-        while (len--) {
-          listeners[len](this);
-        }   
-      }
-    }    
+    dispatch: function (event) {
+        if (this.events[event]) {
+            var listeners = this.events[event], len = listeners.length;
+
+            while (len--) {
+                listeners[len](this);
+            }
+        }
+    }
 };
 
 
@@ -357,26 +356,53 @@ function Edge(v, u, options) {
 }
 
 Edge.prototype = {
-    select: function() {
+    select: function () {
         this.isSelected = true;
     },
 
-    unselect: function() {
-        this.isSelected = false;    
+    unselect: function () {
+        this.isSelected = false;
     }
-}
+};
 
 
-function clone(obj){
-    if(obj == null || typeof(obj) !== 'object'){
+function clone(obj) {
+    if (obj == null || typeof(obj) !== 'object') {
         return obj;
     }
 
     var temp = {};
 
-    for(var key in obj){
+    for (var key in obj) {
         temp[key] = clone(obj[key]);
     }
 
     return temp;
 }
+
+/*var cloner = {
+ _clone: function _clone(obj) {
+ if (obj instanceof Array) {
+ var out = [];
+ for (var i = 0, len = obj.length; i < len; i++) {
+ var value = obj[i];
+ out[i] = (value !== null && typeof value === "object") ? _clone(value) : value;
+ }
+ } else {
+ var out = {};
+ for (var key in obj) {
+ if (obj.hasOwnProperty(key)) {
+ var value = obj[key];
+ out[key] = (value !== null && typeof value === "object") ? _clone(value) : value;
+ }
+ }
+ }
+ return out;
+ },
+
+ clone: function(it) {
+ return this._clone({
+ it: it
+ }).it;
+ }
+ };*/

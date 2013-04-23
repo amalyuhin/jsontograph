@@ -34,7 +34,7 @@
             <a class="link toggle-btn" href="javascript:void(0)">Загрузить файл</a>
             <div class="toggle-block">
                 <form id="load_onto_form" action="data" method="post" enctype="multipart/form-data">
-                    <label for="onto_file">Выберете файл<label>
+                    <label for="onto_file">Выберете файл</label>
                     <input id="onto_file" type="file" name="onto_file" />
                     <input type="submit" value="Загрузить" />
                 </form>
