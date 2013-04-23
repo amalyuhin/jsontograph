@@ -1,12 +1,10 @@
-jsontograph
-===========
-
 jsOntoGraph
+===========
 
 SPARQL query examples
 ---------------------
 
-h2o.owl:
+##### h2o.owl:
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     PREFIX dc: <http://purl.org/dc/elements/1.1/>
     PREFIX ds: <http://www.saga.iao.ru/ontology/V5/DataSource.owl#>
@@ -20,7 +18,7 @@ h2o.owl:
 
 
 
-Thesaurus.owl:
+##### Thesaurus.owl:
     PREFIX owl: <http://www.w3.org/2002/07/owl#>
     PREFIX owl2: <http://www.w3.org/2006/12/owl2#>
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
