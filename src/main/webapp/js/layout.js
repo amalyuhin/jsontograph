@@ -38,9 +38,8 @@ Layout.prototype = {
 
     draw: function () {
         var ctx = this.context;
-        var verticesNb = this.graph.vertices.length;
 
-        for (var i = 0; i < this.graph.edges.length; i++) {
+        for (var i = this.graph.edges.length - 1; i >= 0; i--) {
             var e = this.graph.edges[i];
 
             ctx.strokeStyle = e.options.lineColor;
@@ -61,10 +60,10 @@ Layout.prototype = {
 
         ctx.beginPath();
         ctx.textAlign = "center";
-        for (var i = 0; i < verticesNb; i++) {
-            var v = this.graph.vertices[i];
+        for (var j = this.graph.vertices.length; j >= 0; j--) {
+            var v = this.graph.vertices[j];
 
-            if (v == undefined) continue;
+            if (typeof v === 'undefined') continue;
 
             var buffer = document.createElement('canvas');
             buffer.width = 2 * v.radius;
@@ -103,10 +102,8 @@ Layout.prototype = {
         var self = this;
         var animate = function () {
             self.reqAnimId = requestAnimationFrame(animate);
-
-            self.clear();
+            self.redraw();
             self.step();
-            self.draw();
         };
 
         animate();
@@ -120,6 +117,7 @@ Layout.prototype = {
         if (this.reqAnimId) {
             console.profileEnd();
             cancelRequestAnimationFrame(this.reqAnimId);
+            this.reqAnimId = null;
         }
     }
 };

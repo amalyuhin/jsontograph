@@ -44,11 +44,10 @@ Vector.prototype = {
 function Graph() {
     this.vertices = [];
     this.edges = [];
-
     this.verticesCount = 0;
     this.edgesCount = 0;
-
     this.edgesMap = [];
+    this.adjacency = [];
 }
 
 Graph.prototype = {
@@ -76,7 +75,9 @@ Graph.prototype = {
 
     addEdge: function (v, u, options) {
         if (!this.hasEdge(v.id, u.id) && v.id != u.id) {
-            this.edges[this.edges.length] = new Edge(v, u, options);
+            var edge = new Edge(v, u, options);
+
+            this.edges[this.edges.length] = edge;
 
             if (!this.edgesMap[v.id]) {
                 this.edgesMap[v.id] = [];
@@ -87,6 +88,14 @@ Graph.prototype = {
 
             this.edgesMap[v.id][u.id] = true;
             this.edgesMap[u.id][v.id] = true;
+
+            this.adjacency[v.id] = this.adjacency[v.id] || {};
+            this.adjacency[v.id][u.id] = this.adjacency[v.id][u.id] || [];
+            this.adjacency[u.id] = this.adjacency[u.id] || {};
+            this.adjacency[u.id][v.id] = this.adjacency[u.id][v.id] || [];
+
+            this.adjacency[v.id][u.id].push(edge);
+            this.adjacency[u.id][v.id].push(edge);
 
             this.edgesCount++;
         }
