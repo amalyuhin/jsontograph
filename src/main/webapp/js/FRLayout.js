@@ -33,7 +33,7 @@ FRLayout.prototype = {
 
                 var u = graph.vertices[j];
                 var diff = v.pos.subtract(u.pos);
-                v.disp = v.disp.add(diff.normalise().multiply(this.fr(diff.magnitude())));
+                v.disp = v.disp.add(diff.normalize().multiply(this.fr(diff.magnitude())));
             }
         }
 
@@ -43,15 +43,15 @@ FRLayout.prototype = {
             var e = graph.edges[l];
             var diff = e.v.pos.subtract(e.u.pos);
 
-            e.v.disp = e.v.disp.subtract(diff.normalise().multiply(this.fa(diff.magnitude())));
-            e.u.disp = e.u.disp.add(diff.normalise().multiply(this.fa(diff.magnitude())));
+            e.v.disp = e.v.disp.subtract(diff.normalize().multiply(this.fa(diff.magnitude())));
+            e.u.disp = e.u.disp.add(diff.normalize().multiply(this.fa(diff.magnitude())));
         }
 
         for (var k = 0; k < graph.vertices.length; k++) {
             var v = graph.vertices[k];
             var damping = Math.min(v.disp.magnitude(), this.t);
 
-            v.pos = v.pos.add(v.disp.normalise().multiply(damping));
+            v.pos = v.pos.add(v.disp.normalize().multiply(damping));
             v.pos.x = Math.min((w-10), Math.max(10, v.pos.x));
             v.pos.y = Math.min((h-10), Math.max(10, v.pos.y));
 

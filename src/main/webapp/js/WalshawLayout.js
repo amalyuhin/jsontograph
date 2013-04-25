@@ -21,8 +21,6 @@ function WalshawLayout(canvas, graph) {
     this.isMarked = [];
     this.converged = 0;
     this.oldPos = [];
-
-    this.anim = 0;
 }
 
 WalshawLayout.prototype = {
@@ -146,7 +144,7 @@ WalshawLayout.prototype = {
 
         var v1, v2;
         for (var key in graph.vertices) if (graph.vertices.hasOwnProperty(key)) {
-            graph.vertices[key].pos = Vector.random();
+            graph.vertices[key].pos = Point.random();
 
             if (!v1) {
                 v1 = graph.vertices[key].pos;
@@ -267,7 +265,7 @@ WalshawLayout.prototype = {
                 //if (u == null) continue;
                 if (i !== j) {
                     diff = v.pos.subtract(u.pos);
-                    v.disp = v.disp.add(diff.normalise().multiply(this.fr(diff.magnitude(), v.getWeight())));
+                    v.disp = v.disp.add(diff.normalize().multiply(this.fr(diff.magnitude(), v.getWeight())));
                 }
             }
         }
@@ -276,8 +274,8 @@ WalshawLayout.prototype = {
             var e = graph.edges[l];
             diff = e.v.pos.subtract(e.u.pos);
 
-            e.v.disp = e.v.disp.subtract(diff.normalise().multiply(this.fa(diff.magnitude())));
-            e.u.disp = e.u.disp.add(diff.normalise().multiply(this.fa(diff.magnitude())));
+            e.v.disp = e.v.disp.subtract(diff.normalize().multiply(this.fa(diff.magnitude())));
+            e.u.disp = e.u.disp.add(diff.normalize().multiply(this.fa(diff.magnitude())));
         }
 
         for (var k = 0; k < verticesNb; k++) {
@@ -287,7 +285,7 @@ WalshawLayout.prototype = {
 
             var damping = Math.min(v.disp.magnitude(), this.t);
 
-            v.pos = v.pos.add(v.disp.normalise().multiply(damping));
+            v.pos = v.pos.add(v.disp.normalize().multiply(damping));
             /* v.pos.x = Math.min((w-10), Math.max(10, v.pos.x));
              v.pos.y = Math.min((h-10), Math.max(10, v.pos.y));*/
 

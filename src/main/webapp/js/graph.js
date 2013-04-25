@@ -5,41 +5,6 @@
  * Time: 23:56
  * To change this template use File | Settings | File Templates.
  */
-function Vector(x, y) {
-    this.x = x;
-    this.y = y;
-}
-
-Vector.random = function () {
-    return new Vector(100 + Math.random() * 800, 100 + Math.random() * 700);
-};
-
-Vector.prototype = {
-    add: function (v2) {
-        return new Vector(this.x + v2.x, this.y + v2.y);
-    },
-
-    subtract: function (v2) {
-        return new Vector(this.x - v2.x, this.y - v2.y);
-    },
-
-    multiply: function (n) {
-        return new Vector(this.x * n, this.y * n);
-    },
-
-    divide: function (n) {
-        return new Vector(this.x / n, this.y / n);
-    },
-
-    magnitude: function () {
-        return Math.sqrt(this.x * this.x + this.y * this.y);
-    },
-
-    normalise: function () {
-        return this.divide(this.magnitude());
-    }
-};
-
 
 function Graph() {
     this.vertices = [];
@@ -71,6 +36,14 @@ Graph.prototype = {
         v.setWeight(Math.floor(1 + Math.random() * 5));
 
         this.verticesCount++;
+    },
+
+    getNodes: function () {
+        return this.vertices;
+    },
+
+    getNode: function (id) {
+        return this.vertices[id];
     },
 
     addEdge: function (v, u, options) {
@@ -252,6 +225,7 @@ function Vertex(label, options) {
     this.weight = 0;
     this.isSelected = false;
     this.isHovered = false;
+    this.degree = 0;
 
     if (typeof(options) === 'object') {
         this.options = $.extend(defaults, options);
@@ -265,13 +239,27 @@ function Vertex(label, options) {
 
     this.radius = this.options.radius;
 
-    this.pos = Vector.random();
-    this.disp = new Vector(0, 0);
+    this.pos = Point.random();
+    this.disp = new Point(0, 0);
+
+    this.depth = 0;
+    this.cos = 0;
+    this.heat = 0;
+    this.neighbours = [];
+    this.distTable = null;
 
     this.events = [];
 }
 
 Vertex.prototype = {
+    setNeighbours: function (arr) {
+        this.neighbours = arr;
+    },
+
+    getNeighbours: function () {
+        return this.neighbours;
+    },
+
     setWeight: function (weight) {
         this.weight = weight;
     },
