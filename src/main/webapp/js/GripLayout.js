@@ -17,28 +17,27 @@ function GripLayout(canvas, graph) {
     /**Used for the calulation of the initial node positions*/
     this.vRefNodes = [];
     /**Standard length of an edge. USed for the calculation of the Kawai-Kamada vector*/
-    this.cEdgeLength = 15;
+    this.cEdgeLength = 10;
 
     this.cRounds = 2;
+
+    this.dist = [];
+    this.next = [];
+    this.oGUtils = new SMG_GraphUtils();
 }
 
 GripLayout.prototype = {
     run: function () {
-        this.draw();
+        console.time('Start algorithm execution.');
+        console.profile();
 
-        var vRefNodes = this.vRefNodes;
-        var vNodes = [];
-        var vSubsets = this.vSubsets;
-
-        vSubsets = this.calculateNodeFiltering();
-
-        console.log('subset: ', vSubsets);
-
+        var vSubsets = this.calculateNodeFiltering();
         var currentSet = vSubsets[vSubsets.length - 1];
+
         for (var i = 0; i < currentSet.length; i++) {
-            var tempNode = currentSet[i];
-            this.findNodeNeighbours(tempNode);
-            this.findInitialNodePosition(tempNode);
+            var tmpNode = currentSet[i];
+            this.findNodeNeighbours(tmpNode);
+            this.findInitialNodePosition(tmpNode);
         }
 
         for (var j = vSubsets.length - 2; j >= 0; j--) {
@@ -56,32 +55,45 @@ GripLayout.prototype = {
                     var disp;
                     if (l > 1) {
                         disp = this.computeKKVector(tempNode, j - 1);
+                        //console.log('KKDisp:', disp);
                     } else {
                         disp = this.computeFRVector(tempNode, j);
+                        console.log('FRDisp:', disp);
+                        //disp = disp.divide(30);
                     }
 
+
+
                     this.updateLocalTemp(tempNode, disp);
-                    console.log("disp before ", disp.x, disp.y);
+                    //console.log("disp before ", disp.x, disp.y);
                     //disp = oGUtils.posScalarProduct(tempNode.getHeat(),
                     //				    oGUtils.posScalarDivision(disp,
                     //						      oGUtils.calculateNorm(disp)));
                     //console.log("disp after ", disp.getX(), disp.getY());
-                    disp = disp.divide(1000);
-                    tempNode.changePosition(disp.x, disp.y);
+
+
+                    tempNode.changePosition(tempNode.pos.x + disp.x, tempNode.pos.y + disp.y);
                 }
             }
-
-
 
             currentSet = vSubsets[j];
         }
 
+        this.context.save();
+        this.context.translate(this.canvasWidth/2, this.canvasHeight/2);
         this.redraw();
+        this.context.restore();
+
+        this.stop();
     },
 
     calculateNodeFiltering: function () {
         var vSubsets = [];
         vSubsets.push(this.graph.vertices);
+
+        for (var t=0; t<this.graph.vertices.length; t++) {
+            this.graph.getNode(t).pos = new Point(0, 0);
+        }
 
         var tempNodes = this.graph.vertices.clone();
         var futureSet = [];
@@ -110,14 +122,7 @@ GripLayout.prototype = {
             tempNodes = futureSet;
             futureSet = [];
         }
-        // 	for (var i = 0; i < vSubsets.length; i++){
-        // 	    for (var k = 0; k < vSubsets[i].length; k++){
-        // 		console.log("Node " +
-        // 			    vSubsets[i][k].getId()
-        // 			    + " has depth " + vSubsets[i][k].depth
-        // 			    + " in subset " + i);
-        // 	    }
-        // 	}
+
         return vSubsets;
     },
 
@@ -133,18 +138,47 @@ GripLayout.prototype = {
         while (nodeQ.length > 0) {
             var n = nodeQ.shift();
 
+            for (var i = 0; i < n.getAdjList().length; i++) {
+                n = n.nodeAt(i);
+
+                if (!visitedNodes.contains(n)) {
+
+                    for (var j = 0; j < focusNode.depth; j++) {
+                        if (focusNode.getNeighbours().length < focusNode.depth) {
+                            var nJ = [];
+                            focusNode.getNeighbours().push(nJ);
+                        }
+
+                        //console.log(j, " < ", n.depth, " && ", focusNode.getNeighbours()[j].length, " < ", this.nbrs(j + 1));
+
+                        if (j < n.depth && focusNode.getNeighbours()[j].length < this.nbrs(j + 1)) {
+                            focusNode.getNeighbours()[j].push(n);
+                        }
+                    }
+                    nodeQ.push(n);
+                    visitedNodes.push(n);
+                }
+            }
+        }
+
+        /*while (nodeQ.length > 0) {
+            var n = nodeQ.shift();
+
             for (var i = 0; i < nodesLength; i++) {
-                if (this.graph.hasEdge(n.id, i)) {
+                if (this.graph.adjacency[n.id] && this.graph.adjacency[n.id][i] && this.graph.adjacency[n.id][i].length > 0) {
 
                     n = this.graph.getNode(i);
 
                     if (!visitedNodes.contains(n)) {
-                        //j ist die Anzahl der Nachbarschaftsmengen
+
                         for (var j = 0; j < focusNode.depth; j++) {
                             if (focusNode.getNeighbours().length < focusNode.depth) {
-                                var nJ = [];//Die j-te Nachbarschaftsmenge
+                                var nJ = [];
                                 focusNode.getNeighbours().push(nJ);
                             }
+
+                            //console.log(j, " < ", n.depth, " && ", focusNode.getNeighbours()[j].length, " < ", this.nbrs(j + 1));
+
                             if (j < n.depth && focusNode.getNeighbours()[j].length < this.nbrs(j + 1)) {
                                 focusNode.getNeighbours()[j].push(n);
                             }
@@ -155,7 +189,7 @@ GripLayout.prototype = {
 
                 }
             }
-        }
+        }*/
     },
 
     findInitialNodePosition: function(node){
@@ -177,6 +211,7 @@ GripLayout.prototype = {
                 distance = vRefNodes[vRefNodes.length-1].distTable[node];
             }
             var tempNodePosition = this.getRandomPoint(referenceNodePosition, distance);
+
             node.pos.x = tempNodePosition.x;
             node.pos.y = tempNodePosition.y;
             vRefNodes.push(node);
@@ -186,13 +221,12 @@ GripLayout.prototype = {
             vRefNodes.shift();
             vRefNodes.push(node);
         }
-        //console.log(node.getId() + "-" + node.getX() + "," + node.getY());
     },
 
     nbrs: function(size){
         var nodes = this.graph.getNodes();
 
-        return Math.ceil((this.avgDeg(nodes) * nodes) / size);
+        return Math.ceil((this.avgDeg(nodes) * nodes.length) / size);
     },
 
     avgDeg: function(nodes) {
@@ -214,14 +248,12 @@ GripLayout.prototype = {
             var n = nodeQ.shift();
             var currDist = vDistHash[n.id];
 
-            for (var i = 0; i < this.graph.vertices.length; i++) {
-                if (this.graph.hasEdge(n.id, i)) {
-                    var adjNode = this.graph.vertices[i];
+            for (var i = 0; i < n.getAdjList().length; i++) {
+                var adjNode=n.nodeAt(i);
 
-                    if (!(adjNode.id in vDistHash)) {
-                        nodeQ.unshift(adjNode);
-                        vDistHash[adjNode.id] = currDist + 1;
-                    }
+                if (!(adjNode.id in vDistHash)) {
+                    nodeQ.unshift(adjNode);
+                    vDistHash[adjNode.id] = currDist + 1;
                 }
             }
         }
@@ -292,20 +324,28 @@ GripLayout.prototype = {
                 //console.log("length ", vNeighbours[i][h].length);
                 if (vNeighbours[i][h].id in oNode.distTable) {
                     var oTempNodePos = vNeighbours[i][h].pos;
-                    /*tempPos = oGUtils.posAddition(tempPos,
-                        oGUtils.posScalarProduct(Math.floor(0.005 *
-                            ((oGUtils.posDistance(oNodePos, oTempNodePos) /
-                                (oNode.distTable[vNeighbours[i][h].id] * this.cEdgeLength)) - 1)),
-                            oGUtils.posDifference(oNodePos, oTempNodePos)));*/
 
+                    tempPos = this.oGUtils.posAddition(tempPos,
+                        this.oGUtils.posScalarProduct(Math.floor(0.005 *
+                            ((this.oGUtils.posDistance(oNodePos, oTempNodePos) /
+                                (oNode.distTable[vNeighbours[i][h].id] * this.cEdgeLength)) - 1)),
+                            this.oGUtils.posDifference(oNodePos, oTempNodePos)));
+
+/*
                     tempPos = tempPos.add(
                         oNodePos.subtract(oTempNodePos).multiply(
                             Math.floor(0.005 *
                                 ((oNodePos.distance(oTempNodePos) / (oNode.distTable[vNeighbours[i][h].id] * this.cEdgeLength)) - 1)
                             )
                         )
-                    );
-                    //console.log("temp Pos ", tempPos.getX(), tempPos.getY());
+                    );*/
+
+
+                    /*tempPos = tempPos.add(
+                        oNodePos.subtract(oTempNodePos).multiply(
+                            Math.floor(0.005 * ((oNodePos.distance(oTempNodePos) / oNode.distTable[vNeighbours[i][h].id] * Math.pow(this.cEdgeLength, 2)) - 1))
+                        )
+                    );*/
                 }
             }
 
@@ -319,34 +359,33 @@ GripLayout.prototype = {
 
     computeFRVector: function (oNode, index) {
         var vNeighbours = oNode.getNeighbours();
+        var vAdjNodes = oNode.getAdjList();
         var iFRVector = new Point(0, 0);
         var oNodePos = oNode.pos;
         var tempPos = new Point(0, 0);
 
-        for (var i = 0; i < this.graph.getNodes().length; i++) {
-            if (i !== oNode.id && this.graph.hasEdge(oNode.id, i)) {
+        for (var i = 0; i < vAdjNodes.length; i++) {
+            var oTempNodePos = vAdjNodes[i].pos;
 
-                var oTempNodePos = this.graph.getNode(i).pos;
+            tempPos = this.oGUtils.posAddition(tempPos,
+                this.oGUtils.posScalarProduct(Math.floor(0.0005 *
+                    Math.pow(this.oGUtils.posDistance(oNodePos, oTempNodePos), 2) /
+                    Math.pow(this.cEdgeLength, 2)),
+                    this.oGUtils.posDifference(oTempNodePos, oNodePos)));
 
-                /*tempPos = oGUtils.posAddition(tempPos,
-                    oGUtils.posScalarProduct(Math.floor(0.0005 *
-                        Math.pow(oGUtils.posDistance(oNodePos, oTempNodePos), 2) /
-                        Math.pow(cEdgeLength, 2)),
-                        oGUtils.posDifference(oTempNodePos, oNodePos)));*/
-
-                tempPos = tempPos.add(
-                    oTempNodePos.subtract(oNodePos).multiply(
-                        Math.floor(
-                            0.005 *
-                            Math.pow(oNodePos.distance(oTempNodePos), 2) /
-                            Math.pow(this.cEdgeLength, 2)
-                        )
+            /*tempPos = tempPos.add(
+                oNodePos.subtract(oTempNodePos).multiply(
+                    Math.floor(0.0005 *
+                        Math.pow(oNodePos.distance(oTempNodePos), 2) /
+                        Math.pow(this.cEdgeLength, 2)
                     )
-                );
-            }
+                )
+            );*/
+
+            //console.log("tempPos1: ", tempPos);
         }
 
-        iFRVector = iFRVector.add(tempPos);
+        //iFRVector = iFRVector.add(tempPos);
 
         //for (var i = 0; i < vNeighbours.length; i++){
         if (index > 0 && vNeighbours.length > index) {
@@ -355,17 +394,20 @@ GripLayout.prototype = {
             for (var h = 0; h < iterVal; h++) {
                 var oTempNodePos = vNeighbours[index][h].pos;
 
-                /*tempPos = oGUtils.posAddition(tempPos,
-                    oGUtils.posScalarProduct(Math.floor(0.0008 *
-                        (Math.pow(cEdgeLength, 2) /
-                            Math.pow(oGUtils.posDistance(oNodePos, oTempNodePos), 2))),
-                        oGUtils.posDifference(oNodePos, oTempNodePos)));*/
+                tempPos = oGUtils.posAddition(tempPos,
+                    this.oGUtils.posScalarProduct(Math.floor(0.0008 *
+                        (Math.pow(this.cEdgeLength, 2) /
+                            Math.pow(this.oGUtils.posDistance(oNodePos, oTempNodePos), 2))),
+                        this.oGUtils.posDifference(oNodePos, oTempNodePos)));
 
-                tempPos = tempPos.add(
+                /*tempPos = tempPos.add(
                     oNodePos.subtract(oTempNodePos).multiply(
-                        Math.floor(0.0008 * (Math.pow(this.cEdgeLength, 2) / Math.pow(oNodePos.distance(oTempNodePos), 2)))
+                        Math.floor(0.0008 *
+                            Math.pow(this.cEdgeLength, 2) /
+                            Math.pow(oNodePos.distance(oTempNodePos), 2)
+                        )
                     )
-                );
+                );*/
             }
 
         }
@@ -377,7 +419,7 @@ GripLayout.prototype = {
 
     updateLocalTemp: function(node, disp){
         var cos = 0;
-        var r = 0.15;
+        var r = 0.3;
         var s = 3;
         var normDisp = disp.magnitude();
         var normOldDisp = node.disp.magnitude();

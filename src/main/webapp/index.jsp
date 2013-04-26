@@ -13,10 +13,14 @@
 
     <script type="text/javascript" src="js/labelBox.js"></script>
     <script type="text/javascript" src="js/eventListener.js"></script>
+    <script type="text/javascript" src="js/utils.js"></script>
+    <script type="text/javascript" src="js/smg_graphutils.js"></script>
     <script type="text/javascript" src="js/graph.js"></script>
+    <script type="text/javascript" src="js/requestAnimationFrame.js"></script>
     <script type="text/javascript" src="js/layout.js"></script>
     <script type="text/javascript" src="js/FRLayout.js"></script>
     <script type="text/javascript" src="js/WalshawLayout.js"></script>
+    <script type="text/javascript" src="js/GripLayout.js"></script>
 </head>
 <body>
     <div id="wrapper">
@@ -65,6 +69,9 @@
                     <label>
                         <input type="radio" name="selected_algorythm" value="Walshaw" /> Walshaw
                     </label>
+                    <label>
+                        <input type="radio" name="selected_algorythm" value="Grip" /> Grip
+                    </label>
                 </div>
                 <input type="submit" value="Выбрать" />
             </form>
@@ -76,7 +83,7 @@
 
     <script type="text/javascript">
          $(document).ready(function() {
-            var graph, layout;
+            //var graph, layout;
 
            //console.time('Data load');
 
@@ -163,7 +170,7 @@
 
             console.time('Generate graph');
 
-            graph = new Graph();
+            var graph = new Graph();
 
             for (var i=0; i<data.nodes.length; i++) {
                 var node = data.nodes[i];
@@ -201,7 +208,7 @@
             var originy = 0;
 
             var alg = $('#select_file_form .algorythm input[type=radio]:checked').val();
-            layout = new window[alg+'Layout'](canvas, graph);
+            var layout = new window[alg+'Layout'](canvas, graph);
 
             canvas.onmousewheel = function(event) {
                 var mousex = event.clientX - canvas.offsetLeft;

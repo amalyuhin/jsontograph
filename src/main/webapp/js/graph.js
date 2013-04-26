@@ -247,11 +247,24 @@ function Vertex(label, options) {
     this.heat = 0;
     this.neighbours = [];
     this.distTable = null;
+    this.adjList = [];
 
     this.events = [];
 }
 
 Vertex.prototype = {
+    addNode: function (n) {
+        this.adjList.push(n);
+    },
+
+    getAdjList: function () {
+        return this.adjList;
+    },
+
+    nodeAt: function (i) {
+        return this.adjList[i];
+    },
+
     setNeighbours: function (arr) {
         this.neighbours = arr;
     },

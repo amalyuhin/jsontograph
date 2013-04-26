@@ -28,6 +28,10 @@ Point.prototype = {
         return new Point(this.x * n, this.y * n);
     },
 
+    posScalarProduct: function (n) {
+        return new Point(this.x * n, this.x * n);
+    },
+
     divide: function (n) {
         return new Point(this.x / n, this.y / n);
     },
