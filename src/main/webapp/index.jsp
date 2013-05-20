@@ -127,6 +127,7 @@
 
                 var form = $(this);
 
+                /*
                 if (layout) {
                     alert('clear layout');
                     layout.clear();
@@ -139,6 +140,7 @@
 
                     graph = new Graph();
                 }
+                */
 
                 var data = {
                     file: form.find('#ontology_file').val()
@@ -199,7 +201,8 @@
 
             console.timeEnd('Generate graph');
 
-            console.log('Vertices count: ' + graph.getVerticesCount());
+            console.log('Vertices count: ' + graph.vertices.length);
+            console.log('Edges count: ' + graph.edges.length);
 
             var canvas = document.getElementById('myCanvas');
             var context = canvas.getContext("2d");
@@ -256,6 +259,10 @@
                 var verticesNb = graph.getVerticesCount();
                 var selected = false;
 
+                var callback = function (elem) {
+                    onChangePosition(elem, layout);
+                };
+
                 for (var i=0; i<verticesNb; i++) {
                     var v = graph.vertices[i];
 
@@ -264,15 +271,15 @@
                     ) {
 
                         if (!v.isSelected) {
-                            onChangePosition(v);
+                            callback(v);
 
                             selected = true;
                             graph.selectVertex(v);
-                            v.addEventlistener('changePosition', onChangePosition);
+                            v.addEventlistener('changePosition', callback);
                         } else {
                             selected = false;
                             graph.unselectVertex(v);
-                            v.removeEventlistener('changePosition', onChangePosition);
+                            v.removeEventlistener('changePosition', callback);
                         }
 
                         //v.select();
@@ -280,13 +287,13 @@
                     } else {
                         //v.isSelected = false;
                         graph.unselectVertex(v);
-                        v.removeEventlistener('changePosition', onChangePosition);
+                        v.removeEventlistener('changePosition', callback);
                     }
                 }
 
                 if (!selected) {
                     myTip().hide();
-                    v.removeEventlistener('changePosition', onChangePosition);
+                    v.removeEventlistener('changePosition', callback);
                 }
             };
 
@@ -295,7 +302,7 @@
             console.profileEnd();
         }
 
-        function onChangePosition(vertex) {
+        function onChangePosition(vertex, layout) {
             var transPos = {
                 x: (vertex.pos.x-layout.originx)*layout.scale - (vertex.radius*layout.scale - vertex.radius) + vertex.radius*layout.scale,
                 y: (vertex.pos.y-layout.originy)*layout.scale - (vertex.radius*layout.scale - vertex.radius)

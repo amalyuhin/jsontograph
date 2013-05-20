@@ -67,13 +67,13 @@ FRLayout.prototype = {
 
         if (this.t < 0.01) {
             this.stop();
+            console.timeEnd('Start algorithm execution');
         }
     },
 
     run: function () {
         //if (!window.Worker) {
-        console.time('Algorithm execution');
-        console.profile();
+        console.time('Start algorithm execution');
 
         var self = this;
         var animate = function () {

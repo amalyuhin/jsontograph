@@ -304,11 +304,12 @@ WalshawLayout.prototype = {
 
         if (this.converged === 1) {
             this.stop();
+            console.timeEnd('Start algorithm execution');
         }
     },
 
     run: function () {
-        console.time('Algorithm execution');
+        console.time('Start algorithm execution');
 
         this.coarsening();
         this.extending();
@@ -323,8 +324,6 @@ WalshawLayout.prototype = {
         };
 
         animate();
-
-        console.timeEnd('Algorithm execution');
     }
 };
 

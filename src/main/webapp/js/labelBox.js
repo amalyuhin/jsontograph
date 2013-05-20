@@ -24,7 +24,7 @@ labelBox.prototype = {
     var top = this.boxOffsetX;
     var width = 0;
     var i = 1;
-    for (var label in this.labelColors) {
+    for (var label in this.labelColors) if (this.labelColors.hasOwnProperty(label)) {
       var color = this.labelColors[label];
 
       top = (this.boxHeight + this.boxOffsetTop)*i;

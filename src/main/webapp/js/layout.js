@@ -97,7 +97,6 @@ Layout.prototype = {
 
     run: function () {
         console.time('Start algorithm execution.');
-        console.profile();
 
         var self = this;
         var animate = function () {
@@ -118,8 +117,7 @@ Layout.prototype = {
             cancelRequestAnimationFrame(this.reqAnimId);
             this.reqAnimId = null;
 
-            console.profileEnd();
-            console.timeEnd('Stop algorithm execution.');
+            console.timeEnd('Start algorithm execution.');
         }
     }
 };

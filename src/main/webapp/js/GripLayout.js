@@ -28,8 +28,7 @@ function GripLayout(canvas, graph) {
 
 GripLayout.prototype = {
     run: function () {
-        console.time('Start algorithm execution.');
-        console.profile();
+        console.time('Start algorithm execution');
 
         var vSubsets = this.calculateNodeFiltering();
         var currentSet = vSubsets[vSubsets.length - 1];
@@ -79,12 +78,13 @@ GripLayout.prototype = {
             currentSet = vSubsets[j];
         }
 
-        this.context.save();
-        this.context.translate(this.canvasWidth/2, this.canvasHeight/2);
+        //this.context.save();
+        //this.context.translate(this.canvasWidth/2, this.canvasHeight/2);
         this.redraw();
-        this.context.restore();
+        //this.context.restore();
 
         this.stop();
+        console.timeEnd('Start algorithm execution');
     },
 
     calculateNodeFiltering: function () {

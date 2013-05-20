@@ -16,12 +16,14 @@ import ru.amalyuhin.utils.JSONExtendedObject;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.util.*;
 
 /**
@@ -42,7 +44,8 @@ public class DataServlet extends HttpServlet {
         String file = DATA_DIR + "/" + fileName;
 
         resp.setHeader("Content-Type", "application/json");
-        ServletOutputStream output = resp.getOutputStream();
+        resp.setCharacterEncoding("UTF-8");
+        PrintWriter output = resp.getWriter();
 
         TdbManager tdbManager = new TdbManager(TDB_DIR);
         Model model = tdbManager.getNamedModel(file);
