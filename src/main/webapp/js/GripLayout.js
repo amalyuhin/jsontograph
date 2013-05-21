@@ -97,8 +97,8 @@ GripLayout.prototype = {
 
         var tempNodes = this.graph.vertices.clone();
         var futureSet = [];
-        for (var i = 0; i < tempNodes.length; i++) {
 
+        for (var i = 0; i < tempNodes.length; i++) {
             while (tempNodes.length > 0) {
                 var tempNode = tempNodes.shift();
 
