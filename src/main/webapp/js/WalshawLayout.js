@@ -176,14 +176,23 @@ WalshawLayout.prototype = {
                 var target = targets[key];
 
                 if (!graph.vertices[key] && g.vertices[key] != undefined) {
-                    graph.vertices[key] = g.vertices[key];
+                    //graph.vertices[key] = g.vertices[key];
 
-                    var newPos = {
+                    var tmp = g.vertices[key];
+
+                    var vertex = new Vertex(tmp.label);
+                    vertex.id = tmp.id;
+                    vertex.pos.x = tmp.pos.x;
+                    vertex.pos.y = tmp.pos.y;
+
+                    graph.vertices[key] = vertex;
+
+                    /*var newPos = {
                         x: target.pos.x + (Math.random() - 0.005),
                         y: target.pos.y + (Math.random() - 0.005)
                     };
 
-                    graph.vertices[key].changePosition(newPos.x, newPos.y);
+                    graph.vertices[key].changePosition(newPos.x, newPos.y);*/
 
                     // TODO: сделать с этим что-нибудь
                     graph.verticesCount++;
