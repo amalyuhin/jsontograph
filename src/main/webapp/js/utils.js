@@ -58,7 +58,6 @@ Array.prototype.clone = function () {
 
     return newClone;
 };
-
 Array.prototype.contains = function (val) {
     for (var i = 0; i < this.length; i++) {
         if (this[i] == val) {
@@ -68,7 +67,6 @@ Array.prototype.contains = function (val) {
 
     return false;
 };
-
 Array.prototype.setdiff = function (b) {
     var newArr = [];
     for (var i = 0; i < this.length; i++) {
@@ -78,4 +76,20 @@ Array.prototype.setdiff = function (b) {
     }
 
     return newArr;
+};
+
+var ut = {
+    clone: function(obj) {
+        if (obj == null || typeof(obj) !== 'object') {
+            return obj;
+        }
+
+        var temp = {};
+
+        for (var key in obj) {
+            temp[key] = this.clone(obj[key]);
+        }
+
+        return temp;
+    }
 };

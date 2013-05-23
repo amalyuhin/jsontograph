@@ -24,30 +24,20 @@ function WalshawLayout(canvas, graph) {
 }
 
 WalshawLayout.prototype = {
-    addGraph: function (graph, tar) {
-        var tmp = clone(graph);
-        this.graphCollection[this.graphCollection.length] = {
-            graph: tmp,
-            targets: tar || []
-        };
+    addGraph: function (graph) {
+        this.graphCollection[this.graphCollection.length] = cloner.clone(graph);
     },
 
     getFirstNeighbor: function (id) {
         var graph = this.graph;
-        var verticesNb = graph.getVerticesCount();
-        var edgesNb = graph.edges.length;
+        var verticesNb = graph.vertices.length;
 
         for (var i = 0; i < verticesNb; i++) {
-            if (graph.vertices[i] == null || id === i || this.isMarked[i] === true) continue;
+            var node = graph.getNode(i);
+            if (typeof node === 'undefined') continue;
 
-            for (var j = 0; j < edgesNb; j++) {
-                if (graph.edges[j].v.id === id) {
-                    return graph.edges[j].u;
-                }
-
-                if (graph.edges[j].u.id === id) {
-                    return graph.edges[j].v;
-                }
+            if (graph.hasEdge(id, i)) {
+                return node;
             }
         }
 
@@ -57,23 +47,17 @@ WalshawLayout.prototype = {
     getMinWeightNeighbor: function (id) {
         var graph = this.graph;
         var neighbor = this.getFirstNeighbor(id);
-        var verticesNb = graph.getVerticesCount();
-        //var edgesNb = graph.getEdgesCount();
-        var edgesNb = graph.edges.length;
+        var verticesNb = graph.vertices.length;
 
         if (neighbor === null) return neighbor;
 
         // Ищем соседа с минимальным весом
         for (var i = 0; i < verticesNb; i++) {
-            if (graph.vertices[i] == null || id === i || this.isMarked[i] === true) continue;
+            if (graph.hasEdge(id, i)) {
+                var v = graph.getNode(i);
 
-            for (var j = 0; j < edgesNb; j++) {
-                if (graph.edges[j].v.id === id && (neighbor.getWeight() > graph.edges[j].u.getWeight())) {
-                    neighbor = graph.edges[j].u;
-                }
-
-                if (graph.edges[j].u.id === id && (neighbor.getWeight() > graph.edges[j].v.getWeight())) {
-                    neighbor = graph.edges[j].v;
+                if (neighbor.getWeight() > v.getWeight()) {
+                    neighbor = v;
                 }
             }
         }
@@ -83,8 +67,8 @@ WalshawLayout.prototype = {
 
     coarsening: function () {
         var graph = this.graph;
-        var vertexCount = graph.vertices.length;
-        var targets = [];
+        var vertexCount = graph.getVerticesCount();
+        var vertexNb = graph.vertices.length;
 
         // Добавляем исходный граф в коллекцию
         this.addGraph(graph);
@@ -92,52 +76,57 @@ WalshawLayout.prototype = {
         // Повторяем, пока количество вершин больше 2
         while (vertexCount > 2) {
             var count = vertexCount;
-            var verticesNb = graph.vertices.length;
+            //var verticesNb = graph.vertices.length;
 
             // Сбрасываем отмеченные вершины
-            for (var i = 0; i < verticesNb; i++) {
+            for (var i = 0; i < graph.vertices.length; i++) {
                 this.isMarked[i] = false;
             }
 
-            for (var j = 0; j < verticesNb; j++) {
-                if (graph.vertices[j] == null || this.isMarked[j] === true) continue;
+            for (var j = 0; j < graph.vertices.length; j++) {
+                var v = graph.getNode(j);
+                if (typeof v === 'undefined' || this.isMarked[v.id] === true) continue;
 
-                this.isMarked[j] = true;
+                this.isMarked[v.id] = true;
 
                 var neighbor = this.getMinWeightNeighbor(j);
-
                 if (neighbor !== null) {
                     // Помечаем вершины
                     this.isMarked[neighbor.id] = true;
 
-                    targets[neighbor.id] = clone(graph.vertices[j]);
+                    var cluster = new Vertex(v.label + "_" + neighbor.label);
+                    cluster.isCluster = true;
+                    cluster.targets.push(cloner.clone(v));
+                    cluster.targets.push(cloner.clone(neighbor));
 
-                    graph.vertices[j].label = graph.vertices[j].label + "_" + graph.vertices[neighbor.id].label;
-                    graph.vertices[j].setWeight(graph.vertices[j].getWeight() + graph.vertices[neighbor.id].getWeight());
+                    graph.addVertex(cluster);
 
-                    for (var k = 0; k < verticesNb; k++) {
-                        if (k === j || k === neighbor.id) continue;
+                    cluster.setWeight(v.getWeight() + neighbor.getWeight());
+                    cluster.pos.x = v.pos.x;
+                    cluster.pos.y = v.pos.y;
+
+                    this.isMarked[cluster.id] = true;
+
+                    for (var k = 0; k < graph.vertices.length; k++) {
+                        var u = graph.getNode(k);
+                        if (typeof u === 'undefined' || k === j || k === neighbor.id) continue;
 
                         // Добавляем ребра которых не хватает
-                        if (!graph.hasEdge(j, k) && graph.hasEdge(neighbor.id, k)) {
-                            graph.addEdge(graph.vertices[j], graph.vertices[k]);
+                        if (graph.hasEdge(v.id, u.id) || graph.hasEdge(neighbor.id, u.id)) {
+                            graph.addEdge(cluster, u);
                         }
                     }
 
+                    graph.removeVertex(v.id);
                     graph.removeVertex(neighbor.id);
-
                 }
             }
 
             // Добавляем полученный граф в коллекцию
-            this.addGraph(graph, targets);
+            this.addGraph(graph);
 
-            // Считаем количество вершин в получившемся графе
-            //vertexCount = this.count(graph.vertices);
             vertexCount = graph.getVerticesCount();
-
-
-            if (count == vertexCount) {
+            if (count === vertexCount) {
                 break;
             }
         }

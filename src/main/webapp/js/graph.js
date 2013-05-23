@@ -224,8 +224,9 @@ function Vertex(label, options) {
     this.label = label;
     this.weight = 0;
     this.isSelected = false;
-    this.isHovered = false;
     this.degree = 0;
+    this.isCluster = false;
+    this.targets = [];
 
     if (typeof(options) === 'object') {
         this.options = $.extend(defaults, options);
@@ -375,44 +376,27 @@ Edge.prototype = {
     }
 };
 
+var cloner = {
+     _clone: function _clone(obj) {
+         if (obj instanceof Array) {
+             var out = [];
+             for (var i = 0, len = obj.length; i < len; i++) {
+                 var value = obj[i];
+                 out[i] = (value !== null && typeof value === "object") ? _clone(value) : value;
+             }
+         } else {
+             var out = {};
+             for (var key in obj) {
+                 if (obj.hasOwnProperty(key)) {
+                     var value = obj[key];
+                     out[key] = (value !== null && typeof value === "object") ? _clone(value) : value;
+                 }
+             }
+         }
+         return out;
+     },
 
-function clone(obj) {
-    if (obj == null || typeof(obj) !== 'object') {
-        return obj;
-    }
-
-    var temp = {};
-
-    for (var key in obj) {
-        temp[key] = clone(obj[key]);
-    }
-
-    return temp;
-}
-
-/*var cloner = {
- _clone: function _clone(obj) {
- if (obj instanceof Array) {
- var out = [];
- for (var i = 0, len = obj.length; i < len; i++) {
- var value = obj[i];
- out[i] = (value !== null && typeof value === "object") ? _clone(value) : value;
- }
- } else {
- var out = {};
- for (var key in obj) {
- if (obj.hasOwnProperty(key)) {
- var value = obj[key];
- out[key] = (value !== null && typeof value === "object") ? _clone(value) : value;
- }
- }
- }
- return out;
- },
-
- clone: function(it) {
- return this._clone({
- it: it
- }).it;
- }
- };*/
+     clone: function(it) {
+        return this._clone({it: it}).it;
+     }
+ };
