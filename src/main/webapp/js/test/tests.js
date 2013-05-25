@@ -126,7 +126,7 @@ test("extending", function(){
                 if (j === k || typeof graph.vertices[k] === 'undefined' || typeof graphForEdges.vertices[k] === 'undefined') continue;
 
                 if (hasEdge(graphForEdges, j, k) && !hasEdge(graph, j, k)) {
-                    var e = getEdge(g, j, k);
+                    var e = getEdge(graphForEdges, j, k);
 
                     if (e) {
                         graph.addEdge(graph.vertices[j], graph.vertices[k], e.options);

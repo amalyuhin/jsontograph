@@ -256,7 +256,7 @@
 
             canvas.onmousedown = function(event) {
                 var mousePos = getPosition(event, canvas);
-                var verticesNb = graph.getVerticesCount();
+                var verticesNb = graph.vertices.length;
                 var selected = false;
 
                 var callback = function (elem) {
@@ -264,7 +264,8 @@
                 };
 
                 for (var i=0; i<verticesNb; i++) {
-                    var v = graph.vertices[i];
+                    var v = graph.getNode(i);
+                    if (typeof v === 'undefined') continue;
 
                     if ( ((mousePos.x/layout.scale+layout.originx) > (v.pos.x-10) && (mousePos.x/layout.scale+layout.originx) < (v.pos.x+10)) &&
                          ((mousePos.y/layout.scale+layout.originy) > (v.pos.y-10) && (mousePos.y/layout.scale+layout.originy) < (v.pos.y+10))

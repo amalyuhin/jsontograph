@@ -267,14 +267,14 @@ WalshawLayout.prototype = {
                 if (node.isCluster) {
                     var v = new Vertex(node.targets[0].label);
                     v.id = node.targets[0].id;
-                    v.pos.x = node.pos.x;
-                    v.pos.y = node.pos.y;
+                    v.pos.x = node.pos.x + (Math.random() - 0.005);
+                    v.pos.y = node.pos.y + (Math.random() - 0.005);
                     v.setWeight(node.targets[0].weight);
 
                     var u = new Vertex(node.targets[1].label);
                     u.id = node.targets[1].id;
-                    u.pos.x = node.pos.x;
-                    u.pos.y = node.pos.y;
+                    u.pos.x = node.pos.x + (Math.random() - 0.005);
+                    u.pos.y = node.pos.y + (Math.random() - 0.005);
                     u.setWeight(node.targets[1].weight);
 
                     graph.vertices[v.id] = v;
@@ -286,7 +286,7 @@ WalshawLayout.prototype = {
                 }
             }
 
-            var graphForEdges = layout.graphCollection[l];
+            var graphForEdges = this.graphCollection[l];
 
             for (var j = graphForEdges.vertices.length-1; j >= 0; j--) {
                 if (typeof graph.vertices[j] === 'undefined' || typeof graphForEdges.vertices[j] === 'undefined') continue;
@@ -295,7 +295,7 @@ WalshawLayout.prototype = {
                     if (j === k || typeof graph.vertices[k] === 'undefined' || typeof graphForEdges.vertices[k] === 'undefined') continue;
 
                     if (hasEdge(graphForEdges, j, k) && !hasEdge(graph, j, k)) {
-                        var e = getEdge(g, j, k);
+                        var e = getEdge(graphForEdges, j, k);
 
                         if (e) {
                             graph.addEdge(graph.vertices[j], graph.vertices[k], e.options);
