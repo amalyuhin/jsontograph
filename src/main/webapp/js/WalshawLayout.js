@@ -34,7 +34,7 @@ WalshawLayout.prototype = {
 
         for (var i = 0; i < verticesNb; i++) {
             var node = graph.getNode(i);
-            if (typeof node === 'undefined') continue;
+            if (typeof node === 'undefined' || this.isMarked[node.id]) continue;
 
             if (graph.hasEdge(id, i)) {
                 return node;
@@ -55,6 +55,7 @@ WalshawLayout.prototype = {
         for (var i = 0; i < verticesNb; i++) {
             if (graph.hasEdge(id, i)) {
                 var v = graph.getNode(i);
+                if (typeof v === 'undefined' || this.isMarked[v.id]) continue;
 
                 if (neighbor.getWeight() > v.getWeight()) {
                     neighbor = v;
@@ -145,82 +146,169 @@ WalshawLayout.prototype = {
         this.k = v1.subtract(v2).magnitude();
     },
 
-    extending: function () {
-        var length = this.graphCollection.length - 1;
-        var graph = this.graph;
-        var count = 0;
+//    extending: function () {
+//        var length = this.graphCollection.length - 1;
+//        var graph = this.graph;
+//        var count = 0;
+//
+//        //console.log(this.graphCollection);
+//
+//        // Идем по массиву графов и расширяем кажый до родителя
+//        for (var l = length; --l >= 0;) {
+//
+//            var g = this.graphCollection[l].graph;
+//            var targets = this.graphCollection[l + 1].targets;
+//            //var verticesNb = this.count(g.vertices);
+//            var verticesNb = g.getVerticesCount();
+//
+//            for (var key in targets) if (targets.hasOwnProperty(key)) {
+//
+//                var target = targets[key];
+//
+//                if (!graph.vertices[key] && g.vertices[key] != undefined) {
+//                    //graph.vertices[key] = g.vertices[key];
+//
+//                    var tmp = g.vertices[key];
+//
+//                    var vertex = new Vertex(tmp.label);
+//                    vertex.id = tmp.id;
+//                    vertex.pos.x = tmp.pos.x;
+//                    vertex.pos.y = tmp.pos.y;
+//
+//                    graph.vertices[key] = vertex;
+//
+//                    /*var newPos = {
+//                        x: target.pos.x + (Math.random() - 0.005),
+//                        y: target.pos.y + (Math.random() - 0.005)
+//                    };
+//
+//                    graph.vertices[key].changePosition(newPos.x, newPos.y);*/
+//
+//                    // TODO: сделать с этим что-нибудь
+//                    graph.verticesCount++;
+//                }
+//            }
+//            //this.count(g.vertices)
+//            for (var i = 0; i < verticesNb; i++) {
+//                if (typeof graph.vertices[i] === 'undefined' || typeof g.vertices[i] === 'undefined') continue;
+//
+//                // Добавляем ребра
+//                //this.count(g.vertices)
+//                for (var j = 0; j < verticesNb; j++) {
+//                    if (i === j || typeof graph.vertices[j] === 'undefined' || typeof g.vertices[j] === 'undefined') continue;
+//
+//                    if (g.hasEdge(i, j) === true && graph.hasEdge(i, j) === false) {
+//                        var e = g.getEdge(i, j);
+//
+//                        if (e) {
+//                            graph.addEdge(graph.vertices[i], graph.vertices[j], e.options);
+//                        } else {
+//                            graph.addEdge(graph.vertices[i], graph.vertices[j]);
+//                        }
+//                    }
+//
+//                    if (graph.hasEdge(i, j) === true && g.hasEdge(i, j) === false) {
+//                        graph.removeEdge(i, j);
+//                    }
+//
+//                    // Восстанавливаем вес вершин и выводим дочерние вершины в координатах родителя
+//                    graph.vertices[i].setWeight(g.vertices[i].getWeight());
+//                    graph.vertices[i].label = g.vertices[i].label;
+//
+//                    graph.vertices[j].setWeight(g.vertices[j].getWeight());
+//                    graph.vertices[j].label = g.vertices[j].label;
+//                }
+//            }
+//
+//            delete this.graphCollection[l].graph;
+//            delete this.graphCollection[l + 1].targets;
+//
+//            this.k = this.k * Math.sqrt(4 / 7);
+//        }
+//
+//        delete this.graphCollection;
+//    },
 
-        //console.log(this.graphCollection);
+    extending: function () {
+        function hasEdge(g, vId, uId) {
+            return ((typeof(g.edgesMap[vId]) !== 'undefined' && g.edgesMap[vId][uId] === true) ||
+                (typeof(g.edgesMap[uId]) !== 'undefined' && g.edgesMap[uId][vId] === true));
+        }
+
+        function getEdge(g, vId, uId) {
+            var edgesLength = g.edges.length;
+
+            for (var i = 0; i < edgesLength; i++) {
+                var e = g.edges[i];
+                if (typeof e === 'undefined') continue;
+
+                if ((e.v.id === vId && e.u.id === uId) || (e.v.id === uId && e.u.id === vId)) {
+                    return e;
+                }
+            }
+
+            return null;
+        }
+
+        var graph = this.graph;
+        var length = this.graphCollection.length - 1;
 
         // Идем по массиву графов и расширяем кажый до родителя
         for (var l = length; --l >= 0;) {
 
-            var g = this.graphCollection[l].graph;
-            var targets = this.graphCollection[l + 1].targets;
-            //var verticesNb = this.count(g.vertices);
-            var verticesNb = g.getVerticesCount();
+            var graphForVertices = this.graphCollection[l+1];
+            var verticesNb = graphForVertices.vertices.length;
 
-            for (var key in targets) if (targets.hasOwnProperty(key)) {
+            for (var i = 0; i < verticesNb; i++) {
 
-                var target = targets[key];
+                var node = graphForVertices.vertices[i];
+                if (typeof node === 'undefined') continue;
 
-                if (!graph.vertices[key] && g.vertices[key] != undefined) {
-                    //graph.vertices[key] = g.vertices[key];
+                if (node.isCluster) {
+                    var v = new Vertex(node.targets[0].label);
+                    v.id = node.targets[0].id;
+                    v.pos.x = node.pos.x;
+                    v.pos.y = node.pos.y;
+                    v.setWeight(node.targets[0].weight);
 
-                    var tmp = g.vertices[key];
+                    var u = new Vertex(node.targets[1].label);
+                    u.id = node.targets[1].id;
+                    u.pos.x = node.pos.x;
+                    u.pos.y = node.pos.y;
+                    u.setWeight(node.targets[1].weight);
 
-                    var vertex = new Vertex(tmp.label);
-                    vertex.id = tmp.id;
-                    vertex.pos.x = tmp.pos.x;
-                    vertex.pos.y = tmp.pos.y;
-
-                    graph.vertices[key] = vertex;
-
-                    /*var newPos = {
-                        x: target.pos.x + (Math.random() - 0.005),
-                        y: target.pos.y + (Math.random() - 0.005)
-                    };
-
-                    graph.vertices[key].changePosition(newPos.x, newPos.y);*/
-
-                    // TODO: сделать с этим что-нибудь
+                    graph.vertices[v.id] = v;
+                    graph.vertices[u.id] = u;
                     graph.verticesCount++;
+                    graph.verticesCount++;
+
+                    graph.removeVertex(node.id);
                 }
             }
-            //this.count(g.vertices)
-            for (var i = 0; i < verticesNb; i++) {
-                if (typeof graph.vertices[i] === 'undefined' || typeof g.vertices[i] === 'undefined') continue;
 
-                // Добавляем ребра
-                //this.count(g.vertices)
-                for (var j = 0; j < verticesNb; j++) {
-                    if (i === j || typeof graph.vertices[j] === 'undefined' || typeof g.vertices[j] === 'undefined') continue;
+            var graphForEdges = layout.graphCollection[l];
 
-                    if (g.hasEdge(i, j) === true && graph.hasEdge(i, j) === false) {
-                        var e = g.getEdge(i, j);
+            for (var j = graphForEdges.vertices.length-1; j >= 0; j--) {
+                if (typeof graph.vertices[j] === 'undefined' || typeof graphForEdges.vertices[j] === 'undefined') continue;
+
+                for (var k = graphForEdges.vertices.length-1; k >= 0; k--) {
+                    if (j === k || typeof graph.vertices[k] === 'undefined' || typeof graphForEdges.vertices[k] === 'undefined') continue;
+
+                    if (hasEdge(graphForEdges, j, k) && !hasEdge(graph, j, k)) {
+                        var e = getEdge(g, j, k);
 
                         if (e) {
-                            graph.addEdge(graph.vertices[i], graph.vertices[j], e.options);
+                            graph.addEdge(graph.vertices[j], graph.vertices[k], e.options);
                         } else {
-                            graph.addEdge(graph.vertices[i], graph.vertices[j]);
+                            graph.addEdge(graph.vertices[j], graph.vertices[k]);
                         }
                     }
 
-                    if (graph.hasEdge(i, j) === true && g.hasEdge(i, j) === false) {
-                        graph.removeEdge(i, j);
+                    if (!hasEdge(graphForEdges, j, k) && hasEdge(graph, j, k)) {
+                        graph.removeEdge(j, k);
                     }
-
-                    // Восстанавливаем вес вершин и выводим дочерние вершины в координатах родителя
-                    graph.vertices[i].setWeight(g.vertices[i].getWeight());
-                    graph.vertices[i].label = g.vertices[i].label;
-
-                    graph.vertices[j].setWeight(g.vertices[j].getWeight());
-                    graph.vertices[j].label = g.vertices[j].label;
                 }
             }
-
-            delete this.graphCollection[l].graph;
-            delete this.graphCollection[l + 1].targets;
 
             this.k = this.k * Math.sqrt(4 / 7);
         }
@@ -248,9 +336,8 @@ WalshawLayout.prototype = {
         this.converged = 1;
 
         for (var i = 0; i < verticesNb; i++) {
-            var v = graph.vertices[i];
-
-            //if (v == null) continue;
+            var v = graph.getNode(i);
+            if (typeof v === 'undefined') continue;
 
             this.oldPos[v.id] = v.pos;
 
@@ -258,9 +345,9 @@ WalshawLayout.prototype = {
             v.disp.y = 0;
 
             for (var j = 0; j < verticesNb; j++) {
-                var u = graph.vertices[j];
+                var u = graph.getNode(j);
+                if (typeof u === 'undefined') continue;
 
-                //if (u == null) continue;
                 if (i !== j) {
                     diff = v.pos.subtract(u.pos);
                     v.disp = v.disp.add(diff.normalize().multiply(this.fr(diff.magnitude(), v.getWeight())));
@@ -277,9 +364,8 @@ WalshawLayout.prototype = {
         }
 
         for (var k = 0; k < verticesNb; k++) {
-            var v = graph.vertices[k];
-
-            //if (v == null) continue;
+            var v = graph.getNode(k);
+            if (typeof v === 'undefined') continue;
 
             var damping = Math.min(v.disp.magnitude(), this.t);
 
