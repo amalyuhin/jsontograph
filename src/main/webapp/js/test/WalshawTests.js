@@ -185,3 +185,105 @@ test("extendingAdvantage", function(){
 
     equals(layout.graph.getVerticesCount(), 5);
 });
+
+test("process", function() {
+    var g = new Graph();
+
+    var v1 = new Vertex(1);
+    var v2 = new Vertex(2);
+    var v3 = new Vertex(3);
+    var v4 = new Vertex(4);
+    var v5 = new Vertex(5);
+
+    g.addVertex(v1);
+    g.addVertex(v2);
+    g.addVertex(v3);
+    g.addVertex(v4);
+    g.addVertex(v5);
+
+    g.addEdge(v1, v2);
+    g.addEdge(v2, v3);
+    g.addEdge(v2, v5);
+    g.addEdge(v3, v4);
+    g.addEdge(v3, v5);
+    g.addEdge(v4, v5);
+    g.addEdge(v1, v4);
+
+    var layout = new WalshawLayout(document.createElement('canvas'), g);
+
+    layout.coarsening();
+    layout.extending();
+
+
+    var graph = layout.graph;
+    var verticesNb = graph.vertices.length;
+    var disp, diff;
+
+    //var w = this.canvasWidth;
+    //var h = this.canvasHeight;
+
+    for (var t = 0; t < verticesNb; t++) {
+        var q = graph.getNode(t);
+        if (typeof q === 'undefined') continue;
+
+        console.log(q.id, ':', q.pos.x, q.pos.y);
+    }
+
+    console.log('=========================');
+
+    while (!layout.converged) {
+        layout.converged = true;
+
+        for (var i = 0; i < verticesNb; i++) {
+            var v = graph.getNode(i);
+            if (typeof v === 'undefined') continue;
+
+            disp = new Point(0, 0);
+
+            console.log('=========Loop1==========');
+            for (var j = 0; j < verticesNb; j++) {
+                var u = graph.getNode(j);
+                if (typeof u === 'undefined' || i === j) continue;
+
+                diff =  u.pos.subtract(v.pos);
+                disp = disp.add(diff.normalize().multiply(layout.fr(diff.magnitude(), u.getWeight())));
+
+                console.log('diff', j, ':', diff.x, diff.y);
+                console.log('disp', j, ':', disp.x, disp.y);
+
+                if (isNaN(disp.x) || isNaN(disp.y)) {
+                    console.log('   ', diff.normalize().x, diff.normalize().y);
+                    console.log('   ', diff.magnitude());
+                    console.log('   ', u.getWeight());
+                    console.log('   ', layout.fr(0, 1));
+                    console.log('   ', layout.fr(diff.magnitude(), u.getWeight()));
+                }
+            }
+            console.log('=========================');
+
+            console.log('=========Loop2==========');
+            for (var l = 0; l < verticesNb; l++) {
+                var n = graph.getNode(l);
+                if (typeof n === 'undefined' || !graph.hasEdge(v.id, n.id)) continue;
+
+                diff = n.pos.subtract(v.pos);
+                disp = disp.add(diff.normalize().multiply(layout.fa(diff.magnitude())));
+
+                console.log('diff', l, ':', diff.x, diff.y);
+                console.log('disp', l, ':', disp.x, disp.y);
+            }
+            console.log('=========================');
+
+            var damping = Math.min(layout.t, disp.magnitude());
+            var newPos = v.pos.add(disp.normalize().multiply(damping));
+            var delta = newPos.subtract(v.pos);
+
+
+            if (delta.magnitude() > (layout.k * 0.01)) layout.converged = false;
+            v.updatePosition(newPos);
+            console.log(v.pos.x, ':', v.pos.y);
+        }
+
+        console.log("--------------------");
+    }
+});

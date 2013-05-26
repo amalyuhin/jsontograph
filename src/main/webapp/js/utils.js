@@ -33,6 +33,7 @@ Point.prototype = {
     },
 
     divide: function (n) {
+        if (n === 0) return new Point(0, 0);
         return new Point(this.x / n, this.y / n);
     },
 

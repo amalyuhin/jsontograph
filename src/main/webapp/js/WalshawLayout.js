@@ -19,7 +19,7 @@ function WalshawLayout(canvas, graph) {
 
     this.graphCollection = [];
     this.isMarked = [];
-    this.converged = 0;
+    this.converged = false;
     this.oldPos = [];
 }
 
@@ -311,6 +311,7 @@ WalshawLayout.prototype = {
     },
 
     fr: function (x, w) {
+        if (x === 0) return 0;
         return (-0.2 * w * (this.k * this.k) / x);
     },
 
@@ -320,68 +321,115 @@ WalshawLayout.prototype = {
 
     step: function () {
         var graph = this.graph;
-        var diff;
+        var verticesNb = graph.vertices.length;
+        var disp, diff;
+
         var w = this.canvasWidth;
         var h = this.canvasHeight;
 
-        var verticesNb = graph.vertices.length;
-        var edgesNb = graph.edges.length;
-
-        this.converged = 1;
+        this.converged = true;
 
         for (var i = 0; i < verticesNb; i++) {
             var v = graph.getNode(i);
             if (typeof v === 'undefined') continue;
 
-            this.oldPos[v.id] = v.pos;
-
-            v.disp.x = 0;
-            v.disp.y = 0;
+            disp = new Point(0, 0);
 
             for (var j = 0; j < verticesNb; j++) {
                 var u = graph.getNode(j);
-                if (typeof u === 'undefined') continue;
+                if (typeof u === 'undefined' || i === j) continue;
 
-                if (i !== j) {
-                    diff = v.pos.subtract(u.pos);
-                    v.disp = v.disp.add(diff.normalize().multiply(this.fr(diff.magnitude(), v.getWeight())));
-                }
+                diff = u.pos.subtract(v.pos);
+                disp = disp.add(diff.normalize().multiply(this.fr(diff.magnitude(), u.getWeight())));
             }
+
+            for (var l = 0; l < verticesNb; l++) {
+                var n = graph.getNode(l);
+                if (typeof n === 'undefined' || !graph.hasEdge(v.id, n.id)) continue;
+
+                diff = n.pos.subtract(v.pos);
+                disp = disp.add(diff.normalize().multiply(this.fa(diff.magnitude())));
+            }
+
+            var damping = Math.min(this.t, disp.magnitude());
+            var newPos = v.pos.add(disp.normalize().multiply(damping));
+            var delta = newPos.subtract(v.pos);
+
+            if (delta.magnitude() > (this.k * 0.01)) this.converged = false;
+            v.updatePosition(newPos);
+            console.log(v.pos.x, ':', v.pos.y);
         }
 
-        for (var l = 0; l < edgesNb; l++) {
-            var e = graph.edges[l];
-            diff = e.v.pos.subtract(e.u.pos);
-
-            e.v.disp = e.v.disp.subtract(diff.normalize().multiply(this.fa(diff.magnitude())));
-            e.u.disp = e.u.disp.add(diff.normalize().multiply(this.fa(diff.magnitude())));
-        }
-
-        for (var k = 0; k < verticesNb; k++) {
-            var node = graph.getNode(k);
-            if (typeof node === 'undefined') continue;
-
-            var damping = Math.min(node.disp.magnitude(), this.t);
-            node.pos = node.pos.add(node.disp.normalize().multiply(damping));
-
-            var newPos = {
-                x: Math.min((w - 10), Math.max(10, node.pos.x)),
-                y: Math.min((h - 10), Math.max(10, node.pos.y))
-            };
-            node.changePosition(newPos.x, newPos.y);
-
-            var posDiff = node.pos.subtract(this.oldPos[node.id]);
-
-            if (posDiff.magnitude() > this.k * 0.01) this.converged = 0;
-        }
-
-        this.t = this.t * 0.9;
-
-        if (this.converged === 1) {
+        if (this.converged) {
             this.stop();
             console.timeEnd('Start algorithm execution');
         }
     },
+
+//    step: function () {
+//        var graph = this.graph;
+//        var diff;
+//        var w = this.canvasWidth;
+//        var h = this.canvasHeight;
+//
+//        var verticesNb = graph.vertices.length;
+//        var edgesNb = graph.edges.length;
+//
+//        this.converged = 1;
+//
+//        for (var i = 0; i < verticesNb; i++) {
+//            var v = graph.getNode(i);
+//            if (typeof v === 'undefined') continue;
+//
+//            this.oldPos[v.id] = new Point(v.pos.x, v.pos.y);
+//
+//            v.disp.x = 0;
+//            v.disp.y = 0;
+//
+//            for (var j = 0; j < verticesNb; j++) {
+//                var u = graph.getNode(j);
+//                if (typeof u === 'undefined') continue;
+//
+//                if (i !== j) {
+//                    diff = v.pos.subtract(u.pos);
+//                    v.disp = v.disp.add(diff.normalize().multiply(this.fr(diff.magnitude(), v.getWeight())));
+//                }
+//            }
+//        }
+//
+//        for (var l = 0; l < edgesNb; l++) {
+//            var e = graph.edges[l];
+//            diff = e.v.pos.subtract(e.u.pos);
+//
+//            e.v.disp = e.v.disp.subtract(diff.normalize().multiply(this.fa(diff.magnitude())));
+//            e.u.disp = e.u.disp.add(diff.normalize().multiply(this.fa(diff.magnitude())));
+//        }
+//
+//        for (var k = 0; k < verticesNb; k++) {
+//            var node = graph.getNode(k);
+//            if (typeof node === 'undefined') continue;
+//
+//            var damping = Math.min(node.disp.magnitude(), this.t);
+//            node.pos = node.pos.add(node.disp.normalize().multiply(damping));
+//
+//            var newPos = {
+//                x: Math.min((w - 10), Math.max(10, node.pos.x)),
+//                y: Math.min((h - 10), Math.max(10, node.pos.y))
+//            };
+//            node.changePosition(newPos.x, newPos.y);
+//
+//            var posDiff = node.pos.subtract(this.oldPos[node.id]);
+//
+//            if (posDiff.magnitude() > this.k * 0.01) this.converged = 0;
+//        }
+//
+//        this.t = this.t * 0.9;
+//
+//        if (this.converged === 1) {
+//            this.stop();
+//            console.timeEnd('Start algorithm execution');
+//        }
+//    },
 
     run: function () {
         console.time('Start algorithm execution');

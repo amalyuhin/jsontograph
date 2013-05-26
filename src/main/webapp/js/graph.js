@@ -290,6 +290,13 @@ Vertex.prototype = {
         this.isSelected = false;
     },
 
+    updatePosition: function (pos) {
+        this.pos.x = pos.x;
+        this.pos.y = pos.y;
+
+        this.dispatch('changePosition');
+    },
+
     changePosition: function (x, y) {
         this.pos.x = x;
         this.pos.y = y;
