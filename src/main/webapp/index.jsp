@@ -218,7 +218,7 @@
                 var mousey = event.clientY - canvas.offsetTop;
                 var wheel = event.wheelDelta/120;
 
-                var zoom = Math.pow(1 + Math.abs(wheel)/2 , heel > 0 ? 1 : -1);
+                var zoom = Math.pow(1 + Math.abs(wheel)/2 , wheel > 0 ? 1 : -1);
 
                 context.translate(
                         originx,

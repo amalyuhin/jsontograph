@@ -264,16 +264,14 @@ WalshawLayout.prototype = {
                 ) {
                     var v = new Vertex(node.targets[0].label);
                     v.id = node.targets[0].id;
-                    v.pos.x = node.pos.x;
-                    v.pos.y = node.pos.y;
+                    v.pos = new Point(node.pos.x, node.pos.y);
                     v.setWeight(node.targets[0].weight);
                     graph.vertices[v.id] = v;
                     graph.verticesCount++;
 
                     var u = new Vertex(node.targets[1].label);
                     u.id = node.targets[1].id;
-                    u.pos.x = node.pos.x;
-                    u.pos.y = node.pos.y;
+                    u.pos = new Point(node.pos.x, node.pos.y);
                     u.setWeight(node.targets[1].weight);
                     graph.vertices[u.id] = u;
                     graph.verticesCount++;
@@ -389,7 +387,10 @@ WalshawLayout.prototype = {
         console.time('Start algorithm execution');
 
         this.coarsening();
+        console.log(this.graph.getVerticesCount());
+
         this.extending();
+        console.log(this.graph.getVerticesCount());
 
         var self = this;
         var animate = function () {
