@@ -69,7 +69,6 @@ WalshawLayout.prototype = {
     coarsening: function () {
         var graph = this.graph;
         var vertexCount = graph.getVerticesCount();
-        var vertexNb = graph.vertices.length;
 
         // Добавляем исходный граф в коллекцию
         this.addGraph(graph);
@@ -77,14 +76,13 @@ WalshawLayout.prototype = {
         // Повторяем, пока количество вершин больше 2
         while (vertexCount > 2) {
             var count = vertexCount;
-            //var verticesNb = graph.vertices.length;
 
             // Сбрасываем отмеченные вершины
-            for (var i = 0; i < graph.vertices.length; i++) {
+            for (var i = graph.vertices.length-1; i >= 0; i--) {
                 this.isMarked[i] = false;
             }
 
-            for (var j = 0; j < graph.vertices.length; j++) {
+            for (var j = graph.vertices.length-1; j >= 0; j--) {
                 var v = graph.getNode(j);
                 if (typeof v === 'undefined' || this.isMarked[v.id] === true) continue;
 
@@ -108,7 +106,7 @@ WalshawLayout.prototype = {
 
                     this.isMarked[cluster.id] = true;
 
-                    for (var k = 0; k < graph.vertices.length; k++) {
+                    for (var k = graph.vertices.length-1; k >= 0; k--) {
                         var u = graph.getNode(k);
                         if (typeof u === 'undefined' || k === j || k === neighbor.id) continue;
 
@@ -253,33 +251,31 @@ WalshawLayout.prototype = {
         var graph = this.graph;
         var length = this.graphCollection.length - 1;
 
-        // Идем по массиву графов и расширяем кажый до родителя
         for (var l = length; --l >= 0;) {
-
             var graphForVertices = this.graphCollection[l+1];
-            var verticesNb = graphForVertices.vertices.length;
 
-            for (var i = 0; i < verticesNb; i++) {
-
+            for (var i = graphForVertices.vertices.length-1; i >= 0; i--) {
                 var node = graphForVertices.vertices[i];
                 if (typeof node === 'undefined') continue;
 
-                if (node.isCluster) {
+                if (node.isCluster &&
+                    typeof graph.getNode(node.targets[0].id) === 'undefined' &&
+                    typeof graph.getNode(node.targets[1].id) === 'undefined'
+                ) {
                     var v = new Vertex(node.targets[0].label);
                     v.id = node.targets[0].id;
-                    v.pos.x = node.pos.x + (Math.random() - 0.005);
-                    v.pos.y = node.pos.y + (Math.random() - 0.005);
+                    v.pos.x = node.pos.x;
+                    v.pos.y = node.pos.y;
                     v.setWeight(node.targets[0].weight);
+                    graph.vertices[v.id] = v;
+                    graph.verticesCount++;
 
                     var u = new Vertex(node.targets[1].label);
                     u.id = node.targets[1].id;
-                    u.pos.x = node.pos.x + (Math.random() - 0.005);
-                    u.pos.y = node.pos.y + (Math.random() - 0.005);
+                    u.pos.x = node.pos.x;
+                    u.pos.y = node.pos.y;
                     u.setWeight(node.targets[1].weight);
-
-                    graph.vertices[v.id] = v;
                     graph.vertices[u.id] = u;
-                    graph.verticesCount++;
                     graph.verticesCount++;
 
                     graph.removeVertex(node.id);
@@ -364,22 +360,19 @@ WalshawLayout.prototype = {
         }
 
         for (var k = 0; k < verticesNb; k++) {
-            var v = graph.getNode(k);
-            if (typeof v === 'undefined') continue;
+            var node = graph.getNode(k);
+            if (typeof node === 'undefined') continue;
 
-            var damping = Math.min(v.disp.magnitude(), this.t);
-
-            v.pos = v.pos.add(v.disp.normalize().multiply(damping));
-            /* v.pos.x = Math.min((w-10), Math.max(10, v.pos.x));
-             v.pos.y = Math.min((h-10), Math.max(10, v.pos.y));*/
+            var damping = Math.min(node.disp.magnitude(), this.t);
+            node.pos = node.pos.add(node.disp.normalize().multiply(damping));
 
             var newPos = {
-                x: Math.min((w - 10), Math.max(10, v.pos.x)),
-                y: Math.min((h - 10), Math.max(10, v.pos.y))
+                x: Math.min((w - 10), Math.max(10, node.pos.x)),
+                y: Math.min((h - 10), Math.max(10, node.pos.y))
             };
-            v.changePosition(newPos.x, newPos.y);
+            node.changePosition(newPos.x, newPos.y);
 
-            var posDiff = v.pos.subtract(this.oldPos[v.id]);
+            var posDiff = node.pos.subtract(this.oldPos[node.id]);
 
             if (posDiff.magnitude() > this.k * 0.01) this.converged = 0;
         }
