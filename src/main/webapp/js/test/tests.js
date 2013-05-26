@@ -96,24 +96,25 @@ test("extending", function(){
             if (typeof node === 'undefined') continue;
 
             if (node.isCluster) {
-                var v = new Vertex(node.targets[0].label);
-                v.id = node.targets[0].id;
-                v.pos.x = node.pos.x;
-                v.pos.y = node.pos.y;
-                v.setWeight(node.targets[0].weight);
+                if (typeof graph.getNode(node.targets[0].id) === 'undefined' && typeof graph.getNode(node.targets[1].id) === 'undefined') {
+                    var v = new Vertex(node.targets[0].label);
+                    v.id = node.targets[0].id;
+                    v.pos.x = node.pos.x;
+                    v.pos.y = node.pos.y;
+                    v.setWeight(node.targets[0].weight);
+                    graph.vertices[v.id] = v;
+                    graph.verticesCount++;
 
-                var u = new Vertex(node.targets[1].label);
-                u.id = node.targets[1].id;
-                u.pos.x = node.pos.x;
-                u.pos.y = node.pos.y;
-                u.setWeight(node.targets[1].weight);
+                    var u = new Vertex(node.targets[1].label);
+                    u.id = node.targets[1].id;
+                    u.pos.x = node.pos.x;
+                    u.pos.y = node.pos.y;
+                    u.setWeight(node.targets[1].weight);
+                    graph.vertices[u.id] = u;
+                    graph.verticesCount++;
 
-                graph.vertices[v.id] = v;
-                graph.vertices[u.id] = u;
-                graph.verticesCount++;
-                graph.verticesCount++;
-
-                graph.removeVertex(node.id);
+                    graph.removeVertex(node.id);
+                }
             }
         }
 
