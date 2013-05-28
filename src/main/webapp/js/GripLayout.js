@@ -70,7 +70,6 @@ GripLayout.prototype = {
                     //						      oGUtils.calculateNorm(disp)));
                     //console.log("disp after ", disp.getX(), disp.getY());
 
-
                     tempNode.changePosition(tempNode.pos.x + disp.x, tempNode.pos.y + disp.y);
                 }
             }
@@ -278,10 +277,10 @@ GripLayout.prototype = {
 
     getMinMaxRadius: function (vNodes) {
         var iTempMax;
-        var iTempMin = iTempMax = Math.sqrt(Math.pow(vNodes[0].pos.x, 2) + Math.pow(vNodes[0].pos.y, 2));
+        var iTempMin = iTempMax = vNodes[0].pos.magnitude();
 
         for (var i = 1; i < vNodes.length; i++) {
-            var iTempValue = Math.sqrt(Math.pow(vNodes[i].pos.x, 2) + Math.pow(vNodes[i].pos.y, 2));
+            var iTempValue = vNodes[i].pos.magnitude();
             if (iTempMax < iTempValue) iTempMax = iTempValue;
             if (iTempMin > iTempValue) iTempMin = iTempValue;
         }
@@ -306,8 +305,7 @@ GripLayout.prototype = {
         var x = Math.cos(vAngle) * (vRadius);
         var y = Math.sin(vAngle) * (vRadius);
 
-        oNode.pos.x = Math.floor(x);
-        oNode.pos.y = Math.floor(y);
+        oNode.pos = new Point(Math.floor(x), Math.floor(y));
     },
 
     computeKKVector: function (oNode, i) {
@@ -394,7 +392,7 @@ GripLayout.prototype = {
             for (var h = 0; h < iterVal; h++) {
                 var oTempNodePos = vNeighbours[index][h].pos;
 
-                tempPos = oGUtils.posAddition(tempPos,
+                tempPos = this.oGUtils.posAddition(tempPos,
                     this.oGUtils.posScalarProduct(Math.floor(0.0008 *
                         (Math.pow(this.cEdgeLength, 2) /
                             Math.pow(this.oGUtils.posDistance(oNodePos, oTempNodePos), 2))),
