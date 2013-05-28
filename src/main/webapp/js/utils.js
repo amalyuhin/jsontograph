@@ -45,6 +45,10 @@ Point.prototype = {
         return this.divide(this.magnitude());
     },
 
+    center: function (p2) {
+        return this.add(p2).divide(2);
+    },
+
     distance: function (p2) {
         return Math.sqrt(Math.pow((this.x - p2.x), 2) + Math.pow((this.y - p2.y), 2));
     }

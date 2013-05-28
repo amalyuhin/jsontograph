@@ -33,7 +33,7 @@ Graph.prototype = {
             v.id = index;
         }
 
-        v.setWeight(Math.floor(1 + Math.random() * 5));
+        v.setWeight(1);
 
         this.verticesCount++;
     },
