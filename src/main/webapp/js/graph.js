@@ -46,6 +46,16 @@ Graph.prototype = {
         return this.vertices[id];
     },
 
+    getAdjList: function (id) {
+        var adjList = [];
+
+        if (typeof this.adjacency[id] !== 'undefined') {
+            adjList = this.adjacency[id];
+        }
+
+        return adjList;
+    },
+
     addEdge: function (v, u, options) {
         if (!this.hasEdge(v.id, u.id) && v.id != u.id) {
             var edge = new Edge(v, u, options);
@@ -69,6 +79,11 @@ Graph.prototype = {
 
             this.adjacency[v.id][u.id].push(edge);
             this.adjacency[u.id][v.id].push(edge);
+
+            v.addNode(u);
+            u.addNode(v);
+            v.degree++;
+            u.degree++;
 
             this.edgesCount++;
         }

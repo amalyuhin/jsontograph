@@ -22,9 +22,10 @@ FRLayout.prototype = {
         var graph = this.graph;
         var w = this.canvasWidth;
         var h = this.canvasHeight;
+        var v, diff;
 
         for (var i = 0; i < graph.vertices.length; i++) {
-            var v = graph.vertices[i];
+            v = graph.vertices[i];
             v.disp.x = 0;
             v.disp.y = 0;
 
@@ -32,23 +33,21 @@ FRLayout.prototype = {
                 if (i === j) continue;
 
                 var u = graph.vertices[j];
-                var diff = v.pos.subtract(u.pos);
+                diff = v.pos.subtract(u.pos);
                 v.disp = v.disp.add(diff.normalize().multiply(this.fr(diff.magnitude())));
             }
         }
 
-        //console.log(graph.vertices[0].label+' x: '+graph.vertices[0].pos.x+'; y: '+graph.vertices[0].pos.y);
-
         for (var l = 0; l < graph.edges.length; l++) {
             var e = graph.edges[l];
-            var diff = e.v.pos.subtract(e.u.pos);
+            diff = e.v.pos.subtract(e.u.pos);
 
             e.v.disp = e.v.disp.subtract(diff.normalize().multiply(this.fa(diff.magnitude())));
             e.u.disp = e.u.disp.add(diff.normalize().multiply(this.fa(diff.magnitude())));
         }
 
         for (var k = 0; k < graph.vertices.length; k++) {
-            var v = graph.vertices[k];
+            v = graph.vertices[k];
             var damping = Math.min(v.disp.magnitude(), this.t);
 
             v.pos = v.pos.add(v.disp.normalize().multiply(damping));
@@ -63,64 +62,26 @@ FRLayout.prototype = {
             v.changePosition(newPos.x, newPos.y);
         }
 
-        this.t -= 0.001;
-
-        if (this.t < 0.01) {
-            this.stop();
-            console.timeEnd('Start algorithm execution');
-        }
+        this.t = (this.t - 0.001).toFixed(3);
     },
 
     run: function () {
-        //if (!window.Worker) {
         console.time('Start algorithm execution');
 
         var self = this;
         var animate = function () {
             self.reqAnimId = requestAnimationFrame(animate);
+
             self.redraw();
             self.step();
+
+            if (self.t < 0.001) {
+                self.stop();
+                console.timeEnd('Start algorithm execution');
+            }
         };
 
         animate();
-
-        /*} else {
-            console.time('Algorithm execution');
-            console.profile();
-
-            var worker = new Worker("js/worker.js");
-
-            var self = this;
-            var animate = function () {
-                self.reqAnimId = requestAnimationFrame(animate);
-                self.redraw();
-                //self.step();
-
-                worker.postMessage({
-                    graph: self.graph,
-                    w: self.canvasWidth,
-                    h: self.canvasHeight,
-                    t: self.t,
-                    k: self.k
-                });
-
-                worker.onmessage = function (event) {
-                    var graph = event.data.graph;
-
-                    for (var i = self.graph.vertices.length - 1; i >= 0; i--) {
-                        var v = self.graph.vertices[i];
-                        v.changePosition(graph.vertices[i].pos.x, graph.vertices[i].pos.y);
-                    }
-                };
-
-                self.t -= 0.001;
-                if (self.t < 0.01) {
-                    self.stop();
-                }
-            };
-
-            animate();
-        }*/
     }
 };
 
