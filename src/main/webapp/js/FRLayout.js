@@ -4,9 +4,12 @@ function FRLayout(canvas, graph) {
     Layout.call(this, [canvas, graph]);
 
     this.graph = graph;
+
     this.area = this.canvasWidth * this.canvasHeight;
     this.k = Math.sqrt(this.area / graph.vertices.length);
+
     this.t = 0.9;
+    this.dt = 0.001;
 }
 
 FRLayout.prototype = {
@@ -16,6 +19,11 @@ FRLayout.prototype = {
 
     fa: function (x) {
         return (x * x) / this.k;
+    },
+
+    cool: function () {
+        var t = this.t - this.dt;
+        this.t = t.toFixed(3);
     },
 
     step: function () {
@@ -62,7 +70,7 @@ FRLayout.prototype = {
             v.changePosition(newPos.x, newPos.y);
         }
 
-        this.t = (this.t - 0.001).toFixed(3);
+        this.cool();
     },
 
     run: function () {
@@ -75,9 +83,8 @@ FRLayout.prototype = {
             self.redraw();
             self.step();
 
-            if (self.t < 0.001) {
+            if (self.t < 0) {
                 self.stop();
-                console.timeEnd('Start algorithm execution');
             }
         };
 

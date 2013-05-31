@@ -82,6 +82,7 @@ test("Frep", function(){
 
 test("iterations", function(){
     var layout = this.layout;
+    var t = layout.t;
 
     var iter = 0;
     while (layout.t > 0) {
@@ -89,7 +90,7 @@ test("iterations", function(){
         layout.step();
     }
 
-    equals(iter, 900);
+    equals(iter, (t / layout.dt));
 });
 
 test("boundsOut", function(){
