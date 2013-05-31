@@ -30,8 +30,8 @@ GripLayout.prototype = {
     run: function () {
         console.time('Start algorithm execution');
 
-        var vSubsets = this.calculateNodeFiltering();
-        var currentSet = vSubsets[vSubsets.length - 1];
+        var vSubsets = this.buildMisFiltration();      //MIS filtration
+        var currentSet = vSubsets[vSubsets.length - 1];    //Las MIS set
 
         for (var i = 0; i < currentSet.length; i++) {
             var tmpNode = currentSet[i];
@@ -56,8 +56,8 @@ GripLayout.prototype = {
                         disp = this.computeKKVector(tempNode, j - 1);
                         //console.log('KKDisp:', disp);
                     } else {
-                        disp = this.computeFRVector(tempNode, j);
-                        console.log('FRDisp:', disp);
+                        disp = this.computeFRVector(tempNode, j - 1);
+                        //console.log('FRDisp:', disp);
                         //disp = disp.divide(30);
                     }
 
@@ -79,29 +79,31 @@ GripLayout.prototype = {
 
         //this.context.save();
         //this.context.translate(this.canvasWidth/2, this.canvasHeight/2);
-        this.redraw();
+        //this.redraw();
         //this.context.restore();
 
-        this.stop();
+        //this.stop();
         console.timeEnd('Start algorithm execution');
     },
 
-    calculateNodeFiltering: function () {
+    buildMisFiltration: function () {
         var vSubsets = [];
+
         vSubsets.push(this.graph.vertices);
 
-        for (var t=0; t<this.graph.vertices.length; t++) {
+        for (var t = 0; t < this.graph.vertices.length; t++) {
             this.graph.getNode(t).pos = new Point(0, 0);
         }
 
         var tempNodes = this.graph.vertices.clone();
-        var futureSet = [];
+        var nextSet = [];
 
         for (var i = 0; i < tempNodes.length; i++) {
+
             while (tempNodes.length > 0) {
                 var tempNode = tempNodes.shift();
 
-                futureSet.push(tempNode);
+                nextSet.push(tempNode);
                 tempNode.depth++;
 
                 if (tempNode.distTable === null) {
@@ -117,78 +119,45 @@ GripLayout.prototype = {
                 }
             }
 
-            vSubsets.push(futureSet.clone());
-            tempNodes = futureSet;
-            futureSet = [];
+            vSubsets.push(nextSet.clone());
+            tempNodes = nextSet;
+            nextSet = [];
         }
 
         return vSubsets;
     },
 
-    findNodeNeighbours: function (focusNode) {
-        var visitedNodes = [];
-        var nodeQ = [];
-        var nodesLength = this.graph.getNodes().length;
+    findNodeNeighbours: function (node) {
+        var visited = [];
+        var nodesQ = [];
+        var neighbours = [];
 
-        focusNode.setNeighbours([]);
-        visitedNodes.push(focusNode);
-        nodeQ.unshift(focusNode);
+        node.setNeighbours([]);
+        visited.push(node);
+        nodesQ.unshift(node);
 
-        while (nodeQ.length > 0) {
-            var n = nodeQ.shift();
+        while (nodesQ.length > 0) {
+            var n = nodesQ.shift();
 
             for (var i = 0; i < n.getAdjList().length; i++) {
                 n = n.nodeAt(i);
 
-                if (!visitedNodes.contains(n)) {
-
-                    for (var j = 0; j < focusNode.depth; j++) {
-                        if (focusNode.getNeighbours().length < focusNode.depth) {
-                            var nJ = [];
-                            focusNode.getNeighbours().push(nJ);
+                if (!visited.contains(n)) {
+                    for (var j = 0; j < node.depth; j++) {
+                        if (neighbours.length < node.depth) {
+                            neighbours.push([]);
                         }
 
-                        //console.log(j, " < ", n.depth, " && ", focusNode.getNeighbours()[j].length, " < ", this.nbrs(j + 1));
-
-                        if (j < n.depth && focusNode.getNeighbours()[j].length < this.nbrs(j + 1)) {
-                            focusNode.getNeighbours()[j].push(n);
+                        if (j < n.depth && neighbours[j].length < this.nbrs(j + 1)) {
+                            neighbours[j].push(n);
                         }
                     }
-                    nodeQ.push(n);
-                    visitedNodes.push(n);
+
+                    nodesQ.push(n);
+                    visited.push(n);
                 }
             }
         }
-
-        /*while (nodeQ.length > 0) {
-            var n = nodeQ.shift();
-
-            for (var i = 0; i < nodesLength; i++) {
-                if (this.graph.adjacency[n.id] && this.graph.adjacency[n.id][i] && this.graph.adjacency[n.id][i].length > 0) {
-
-                    n = this.graph.getNode(i);
-
-                    if (!visitedNodes.contains(n)) {
-
-                        for (var j = 0; j < focusNode.depth; j++) {
-                            if (focusNode.getNeighbours().length < focusNode.depth) {
-                                var nJ = [];
-                                focusNode.getNeighbours().push(nJ);
-                            }
-
-                            //console.log(j, " < ", n.depth, " && ", focusNode.getNeighbours()[j].length, " < ", this.nbrs(j + 1));
-
-                            if (j < n.depth && focusNode.getNeighbours()[j].length < this.nbrs(j + 1)) {
-                                focusNode.getNeighbours()[j].push(n);
-                            }
-                        }
-                        nodeQ.push(n);
-                        visitedNodes.push(n);
-                    }
-
-                }
-            }
-        }*/
     },
 
     findInitialNodePosition: function(node){
@@ -236,19 +205,19 @@ GripLayout.prototype = {
         return (gradesSum / nodes.length);
     },
 
-    calculateDistances: function(oFocusNode) {
+    calculateDistances: function(node) {
         var vDistHash = [];
         var nodeQ = [];
 
-        vDistHash[oFocusNode.id] = 0;
-        nodeQ.unshift(oFocusNode);
+        vDistHash[node.id] = 0;
+        nodeQ.unshift(node);
 
         while (nodeQ.length > 0) {
             var n = nodeQ.shift();
             var currDist = vDistHash[n.id];
 
             for (var i = 0; i < n.getAdjList().length; i++) {
-                var adjNode=n.nodeAt(i);
+                var adjNode = n.nodeAt(i);
 
                 if (!(adjNode.id in vDistHash)) {
                     nodeQ.unshift(adjNode);
@@ -314,6 +283,8 @@ GripLayout.prototype = {
         var oNodePos = oNode.pos;
         var tempPos = new Point(0, 0);
 
+        console.log('Neighbours:', vNeighbours);
+
         //iterVal = vNeighbours.length;
         //for (var i = 0; i < vNeighbours.length; i++){
         //console.log("neighbours ", vNeighbours.length, i);
@@ -365,22 +336,19 @@ GripLayout.prototype = {
         for (var i = 0; i < vAdjNodes.length; i++) {
             var oTempNodePos = vAdjNodes[i].pos;
 
-            tempPos = this.oGUtils.posAddition(tempPos,
+            /*tempPos = this.oGUtils.posAddition(tempPos,
                 this.oGUtils.posScalarProduct(Math.floor(0.0005 *
                     Math.pow(this.oGUtils.posDistance(oNodePos, oTempNodePos), 2) /
                     Math.pow(this.cEdgeLength, 2)),
-                    this.oGUtils.posDifference(oTempNodePos, oNodePos)));
+                    this.oGUtils.posDifference(oTempNodePos, oNodePos)));*/
 
-            /*tempPos = tempPos.add(
-                oNodePos.subtract(oTempNodePos).multiply(
-                    Math.floor(0.0005 *
-                        Math.pow(oNodePos.distance(oTempNodePos), 2) /
-                        Math.pow(this.cEdgeLength, 2)
-                    )
-                )
-            );*/
+            var tempPos1 = oNodePos.subtract(oTempNodePos).multiply(
+                Math.floor(0.0005 * Math.pow(oNodePos.distance(oTempNodePos), 2) / Math.pow(this.cEdgeLength, 2))
+            );
 
-            //console.log("tempPos1: ", tempPos);
+            tempPos = tempPos.add(tempPos1);
+
+            console.log('temp pos 1:', tempPos1);
         }
 
         //iFRVector = iFRVector.add(tempPos);
@@ -392,11 +360,18 @@ GripLayout.prototype = {
             for (var h = 0; h < iterVal; h++) {
                 var oTempNodePos = vNeighbours[index][h].pos;
 
-                tempPos = this.oGUtils.posAddition(tempPos,
+               /* tempPos = this.oGUtils.posAddition(tempPos,
                     this.oGUtils.posScalarProduct(Math.floor(0.0008 *
                         (Math.pow(this.cEdgeLength, 2) /
                             Math.pow(this.oGUtils.posDistance(oNodePos, oTempNodePos), 2))),
-                        this.oGUtils.posDifference(oNodePos, oTempNodePos)));
+                        this.oGUtils.posDifference(oNodePos, oTempNodePos)));*/
+
+                var tempPos2 = oTempNodePos.subtract(oNodePos).multiply(
+                    Math.floor(0.0005 * 0.05 * Math.pow(oNodePos.distance(oTempNodePos), 2) / Math.pow(this.cEdgeLength, 2))
+                );
+
+                tempPos.add(tempPos2);
+                console.log('temp pos 2:', tempPos2);
 
                 /*tempPos = tempPos.add(
                     oNodePos.subtract(oTempNodePos).multiply(
