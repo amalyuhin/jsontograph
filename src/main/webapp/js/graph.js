@@ -80,10 +80,10 @@ Graph.prototype = {
             this.adjacency[v.id][u.id].push(edge);
             this.adjacency[u.id][v.id].push(edge);
 
-            v.addNode(u);
+            /*v.addNode(u);
             u.addNode(v);
             v.degree++;
-            u.degree++;
+            u.degree++;*/
 
             this.edgesCount++;
         }

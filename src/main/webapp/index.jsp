@@ -73,6 +73,9 @@
                         <input type="radio" name="selected_algorythm" value="Grip" /> Grip
                     </label>
                 </div>
+                <div>
+                    <input id="show_vertex_label" type="checkbox" /> Позазывать названия вершин
+                </div>
                 <input type="submit" value="Выбрать" />
             </form>
             <canvas id="labelBoxes" width="500" height="500"></canvas>
@@ -82,6 +85,8 @@
     <footer></footer>
 
     <script type="text/javascript">
+        var layout;
+
          $(document).ready(function() {
             //var graph, layout;
 
@@ -165,6 +170,18 @@
                     }
                 });
             });
+
+            $('#show_vertex_label').change(function(){
+                if (layout) {
+                    if ($(this).is(':checked')){
+                        layout.showVertexLabel = true;
+                    } else {
+                        layout.showVertexLabel = false;
+                    }
+
+                    layout.redraw();
+                }
+            });
         });
 
         function init(data) {
@@ -211,7 +228,9 @@
             var originy = 0;
 
             var alg = $('#select_file_form .algorythm input[type=radio]:checked').val();
-            var layout = new window[alg+'Layout'](canvas, graph);
+
+            layout = new window[alg+'Layout'](canvas, graph);
+            layout.showVertexLabel = $('#show_vertex_label').is(':checked');
 
             canvas.onmousewheel = function(event) {
                 var mousex = event.clientX - canvas.offsetLeft;

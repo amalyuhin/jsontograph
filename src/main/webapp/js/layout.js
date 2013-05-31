@@ -21,6 +21,7 @@ function Layout(canvas, graph) {
     this.originy = 0;
 
     this.reqAnimId = null;
+    this.showVertexLabel = false;
 
     this.eventListeners = [];
 }
@@ -82,6 +83,10 @@ Layout.prototype = {
             ctx.translate(v.pos.x - v.radius, v.pos.y - v.radius);
             ctx.drawImage(buffer, 0, 0);
             ctx.restore();
+
+            if (this.showVertexLabel) {
+                ctx.fillText(v.label, v.pos.x, v.pos.y-v.radius);
+            }
         }
         ctx.stroke();
     },

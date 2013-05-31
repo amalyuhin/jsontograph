@@ -23,6 +23,16 @@ function WalshawLayout(canvas, graph) {
 }
 
 WalshawLayout.prototype = {
+    fr: function (x, w) {
+        if (x === 0) return 0;
+        return -0.2 * (w * Math.pow(this.k, 2) / x);
+    },
+
+    fa: function (x) {
+        if (this.k === 0) return 0;
+        return Math.pow(x, 2) / this.k;
+    },
+
     addGraph: function (graph) {
         this.graphCollection[this.graphCollection.length] = {
             vertices: cloner.clone(graph.vertices),
@@ -227,21 +237,12 @@ WalshawLayout.prototype = {
             }
 
             this.k = this.k * Math.sqrt(4 / 7);
+            this.t = this.k;
 
             this.step();
         }
 
         delete this.graphCollection;
-    },
-
-    fr: function (x, w) {
-        if (x === 0) return 0;
-        return -0.2 * (w * Math.pow(this.k, 2) / x);
-    },
-
-    fa: function (x) {
-        if (this.k === 0) return 0;
-        return Math.pow(x, 2) / this.k;
     },
 
     step: function () {
@@ -311,9 +312,29 @@ WalshawLayout.prototype = {
         this.extending();
         console.log(this.graph.getVerticesCount());
 
-        this.redraw();
+        //this.redraw();
 
-        console.timeEnd('Start algorithm execution');
+
+        var self = this;
+        var animate = function () {
+            self.reqAnimId = requestAnimationFrame(animate);
+            self.redraw();
+            //self.t = 0.9;
+            self.step();
+
+            console.log(self.t);
+        };
+
+        animate();
+
+        /* var t = 900;
+         while (t > 0) {
+         this.step();
+         this.redraw();
+         t--;
+         }*/
+
+        //console.timeEnd('Start algorithm execution');
 
 
         /*var self = this;
