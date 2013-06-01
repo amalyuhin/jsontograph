@@ -74,7 +74,7 @@
                     </label>
                 </div>
                 <div>
-                    <input id="show_vertex_label" type="checkbox" /> Позазывать названия вершин
+                    <input id="show_vertex_label" type="checkbox" /> Позазывать подписи вершин
                 </div>
                 <input type="submit" value="Выбрать" />
             </form>

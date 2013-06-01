@@ -15,22 +15,23 @@ function WalshawLayout(canvas, graph) {
 
     this.area = this.canvasWidth * this.canvasHeight;
     this.k = 0;
-    this.t = 0.9;
+    this.maxIterations = 350;
 
     this.graphCollection = [];
     this.isMarked = [];
-    this.converged = false;
 }
 
 WalshawLayout.prototype = {
     fr: function (x, w) {
-        if (x === 0) return 0;
         return -0.2 * (w * Math.pow(this.k, 2) / x);
     },
 
     fa: function (x) {
-        if (this.k === 0) return 0;
         return Math.pow(x, 2) / this.k;
+    },
+
+    cool: function (t) {
+        return t * 0.09;
     },
 
     addGraph: function (graph) {
@@ -178,8 +179,6 @@ WalshawLayout.prototype = {
             return null;
         }
 
-        this.step();
-
         var graph = this.graph;
         var length = this.graphCollection.length - 1;
 
@@ -236,22 +235,29 @@ WalshawLayout.prototype = {
                 }
             }
 
-            this.k = this.k * Math.sqrt(4 / 7);
-            this.t = this.k;
-
-            this.step();
+            this.k = this.k * Math.sqrt(4 / 5);
         }
 
         delete this.graphCollection;
     },
 
-    step: function () {
+    step: function (t) {
         var graph = this.graph;
         var verticesNb = graph.vertices.length;
         var v, u, delta;
 
-        while (!this.converged) {
-            this.converged = true;
+        var converged = false;
+
+        while (!converged) {
+            converged = true;
+
+            var oldPos = [];
+            for (var m = 0; m < verticesNb; m++) {
+                v = graph.getNode(m);
+                if (typeof v === 'undefined') continue;
+
+                oldPos[v.id] = new Point(v.pos.x, v.pos.y);
+            }
 
             for (var i = 0; i < verticesNb; i++) {
                 v = graph.getNode(i);
@@ -265,13 +271,11 @@ WalshawLayout.prototype = {
 
                     delta = u.pos.subtract(v.pos);
                     if (delta.magnitude() < 0.1) {
-                        delta = new Point((0.1 + Math.random() * 0.1), (0.1 + Math.random() * 0.1));
+                        delta = new Point((0.1 + Math.random() * 0.1), (0.1 + Math.random() * 10));
                     }
 
                     var fr = this.fr(delta.magnitude(), u.getWeight());
-                    console.log('fr:', fr);
                     disp = disp.add(delta.normalize().multiply(fr));
-                    console.log('fr disp:', disp.magnitude());
                 }
 
                 for (var l = 0; l < verticesNb; l++) {
@@ -287,19 +291,17 @@ WalshawLayout.prototype = {
                     disp = disp.add(delta.normalize().multiply(fa));
                 }
 
-                var oldPos = new Point(v.pos.x, v.pos.y);
-
                 if (disp.magnitude() > 0) {
-                    var newPos = v.pos.add(disp.normalize().multiply(Math.min(this.t, disp.magnitude())));
+                    var newPos = v.pos.add(disp.normalize().multiply(Math.min(t, disp.magnitude())));
                     v.updatePosition(newPos);
                 }
 
-                if (v.pos.subtract(oldPos).magnitude() > (this.k * 0.01)) {
-                    this.converged = false;
+                if (v.pos.subtract(oldPos[v.id]).magnitude() > (this.k * 0.01)) {
+                    converged = false;
                 }
             }
 
-            this.t = this.t * 0.9;
+            t = this.cool(t);
         }
     },
 
@@ -307,43 +309,32 @@ WalshawLayout.prototype = {
         console.time('Start algorithm execution');
 
         this.coarsening();
-        console.log(this.graph.getVerticesCount());
-
         this.extending();
-        console.log(this.graph.getVerticesCount());
 
-        //this.redraw();
+        var iter = 0;
+        while (iter <= this.maxIterations) {
+            this.step(0.9);
+            iter++;
+        }
 
+        this.redraw();
 
-        var self = this;
-        var animate = function () {
-            self.reqAnimId = requestAnimationFrame(animate);
-            self.redraw();
-            //self.t = 0.9;
-            self.step();
-
-            console.log(self.t);
-        };
-
-        animate();
-
-        /* var t = 900;
-         while (t > 0) {
-         this.step();
-         this.redraw();
-         t--;
-         }*/
-
-        //console.timeEnd('Start algorithm execution');
+        console.timeEnd('Start algorithm execution');
 
 
         /*var self = this;
+        var iter = 0;
         var animate = function () {
             self.reqAnimId = requestAnimationFrame(animate);
 
-            self.clear();
-            //self.step();
-            self.draw();
+            self.step(0.9);
+            self.redraw();
+
+            iter++;
+
+            if (iter > self.maxIterations) {
+                self.stop();
+            }
         };
 
         animate();*/
