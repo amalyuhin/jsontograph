@@ -74,7 +74,9 @@
                     </label>
                 </div>
                 <div>
-                    <input id="show_vertex_label" type="checkbox" /> Показывать подписи вершин
+                    <label>
+                        <input id="show_vertex_label" type="checkbox" /> Показывать подписи вершин
+                    </label>
                 </div>
                 <input type="submit" value="Выбрать" />
             </form>
@@ -173,12 +175,7 @@
 
             $('#show_vertex_label').change(function(){
                 if (layout) {
-                    if ($(this).is(':checked')){
-                        layout.showVertexLabel = true;
-                    } else {
-                        layout.showVertexLabel = false;
-                    }
-
+                    layout.showVertexLabel = $(this).is(':checked');
                     layout.redraw();
                 }
             });

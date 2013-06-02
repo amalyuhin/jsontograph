@@ -15,7 +15,7 @@ function WalshawLayout(canvas, graph) {
 
     this.area = this.canvasWidth * this.canvasHeight;
     this.k = 0;
-    this.maxIterations = 300;
+    this.maxIterations = 90;
 
     this.graphCollection = [];
     this.isMarked = [];
@@ -31,7 +31,7 @@ WalshawLayout.prototype = {
     },
 
     cool: function (t) {
-        return t * 0.09;
+        return t * 0.9;
     },
 
     addGraph: function (graph) {
@@ -114,12 +114,12 @@ WalshawLayout.prototype = {
 
                     var targets = [];
                     targets.push({
-                        node: cloner.clone(v),
-                        neighbors: cloner.clone(graph.adjacency[v.id])
+                        node: cloner.clone(v)
+                        //neighbors: cloner.clone(graph.adjacency[v.id])
                     });
                     targets.push({
-                        node: cloner.clone(neighbor),
-                        neighbors: cloner.clone(graph.adjacency[neighbor.id])
+                        node: cloner.clone(neighbor)
+                        //neighbors: cloner.clone(graph.adjacency[neighbor.id])
                     });
 
                     cluster.clusterData = {
@@ -175,9 +175,9 @@ WalshawLayout.prototype = {
     },
 
     extending: function () {
-       /* function hasEdge(g, vId, uId) {
+        function hasEdge(g, vId, uId) {
             return ((typeof(g.edgesMap[vId]) !== 'undefined' && g.edgesMap[vId][uId] === true) ||
-                (typeof(g.edgesMap[uId]) !== 'undefined' && g.edgesMap[uId][vId] === true));
+            (typeof(g.edgesMap[uId]) !== 'undefined' && g.edgesMap[uId][vId] === true));
         }
 
         function getEdge(g, vId, uId) {
@@ -193,8 +193,84 @@ WalshawLayout.prototype = {
             }
 
             return null;
-        }*/
+        }
 
+        var graph = this.graph;
+        var length = this.graphCollection.length - 1;
+        var minLevel = 0;
+
+        for (var l = length; l >= minLevel; l--) {
+            var graphForVertices = this.graphCollection[l];
+
+            if (l > minLevel) {
+                for (var i = graphForVertices.vertices.length-1; i >= 0; i--) {
+                    var cluster = graphForVertices.vertices[i];
+                    if (typeof cluster === 'undefined') continue;
+
+                    if (cluster.isCluster && cluster.clusterData.level === l &&
+                        typeof graph.getNode(cluster.clusterData.targets[0].node.id) === 'undefined' &&
+                        typeof graph.getNode(cluster.clusterData.targets[1].node.id) === 'undefined'
+                    ) {
+                        var v = new Vertex(cluster.clusterData.targets[0].node.label);
+
+                        v.id = cluster.clusterData.targets[0].node.id;
+                        v.pos = new Point(cluster.pos.x, cluster.pos.y);
+                        v.setWeight(cluster.clusterData.targets[0].node.weight);
+                        graph.vertices[v.id] = v;
+                        graph.verticesCount++;
+
+                        var u = new Vertex(cluster.clusterData.targets[1].node.label);
+
+                        u.id = cluster.clusterData.targets[1].node.id;
+                        u.pos = new Point(cluster.pos.x, cluster.pos.y);
+                        u.setWeight(cluster.clusterData.targets[1].node.weight);
+                        graph.vertices[u.id] = u;
+                        graph.verticesCount++;
+
+                        /*var adjacencies1 = cloner.clone(cluster.clusterData.targets[0].neighbors);
+                         var adjacencies2 = cloner.clone(cluster.clusterData.targets[1].neighbors);*/
+
+                        graph.removeVertex(cluster.id);
+
+                        /*addClusterNeighbors(graph, v, adjacencies1);
+                         addClusterNeighbors(graph, u, adjacencies2);*/
+                    }
+                }
+
+            } else {
+                var graphForEdges = this.graphCollection[l];
+
+                for (var j = graphForEdges.vertices.length-1; j >= 0; j--) {
+                    if (typeof graph.vertices[j] === 'undefined' || typeof graphForEdges.vertices[j] === 'undefined') continue;
+
+                    for (var k = graphForEdges.vertices.length-1; k >= 0; k--) {
+                        if (j === k || typeof graph.vertices[k] === 'undefined' || typeof graphForEdges.vertices[k] === 'undefined') continue;
+
+                        if (hasEdge(graphForEdges, j, k) && !hasEdge(graph, j, k)) {
+                            var e = getEdge(graphForEdges, j, k);
+
+                            if (e) {
+                                graph.addEdge(graph.vertices[j], graph.vertices[k], e.options);
+                            } else {
+                                graph.addEdge(graph.vertices[j], graph.vertices[k]);
+                            }
+                        }
+
+                        if (!hasEdge(graphForEdges, j, k) && hasEdge(graph, j, k)) {
+                            graph.removeEdge(j, k);
+                        }
+                    }
+                }
+            }
+
+            this.k = this.k * Math.sqrt(0.85);
+            delete this.graphCollection[l];
+        }
+
+        delete this.graphCollection;
+    },
+
+    /*extending: function () {
         function addClusterNeighbors(g, v, adjacencies) {
             console.log(adjacencies);
 
@@ -205,11 +281,11 @@ WalshawLayout.prototype = {
                 var e = adjacencies[u.id];
 
                 if (typeof e !== 'undefined' && !g.hasEdge(v.id, u.id)) {
-                    console.log('add edge:', v.label, ' - ', u.label);
-                    g.addEdge(v, u, e);
+                    //console.log('add edge:', v.label, ' - ', u.label);
+                    g.addEdge(v, u, e.options);
 
                 } else if (g.hasEdge(v.id, u.id) && typeof e === 'undefined') {
-                    console.log('remove edge:', v.label, ' - ', u.label);
+                    //console.log('remove edge:', v.label, ' - ', u.label);
                     g.removeEdge(v.id, u.id);
                 }
             }
@@ -218,7 +294,7 @@ WalshawLayout.prototype = {
         var graph = this.graph;
         var length = this.graphCollection.length - 1;
 
-        for (var l = length; l > 2; l--) {
+        for (var l = length; l >= 0; l--) {
             var graphForVertices = this.graphCollection[l];
 
             for (var i = graphForVertices.vertices.length-1; i >= 0; i--) {
@@ -232,8 +308,6 @@ WalshawLayout.prototype = {
                     var v = new Vertex(cluster.clusterData.targets[0].node.label);
 
                     v.id = cluster.clusterData.targets[0].node.id;
-                    v.isCluster = cluster.clusterData.targets[0].node.isCluster;
-                    v.targets = cloner.clone(cluster.clusterData.targets[0].node.targets);
                     v.pos = new Point(cluster.pos.x, cluster.pos.y);
                     v.setWeight(cluster.clusterData.targets[0].node.weight);
                     graph.vertices[v.id] = v;
@@ -242,8 +316,6 @@ WalshawLayout.prototype = {
                     var u = new Vertex(cluster.clusterData.targets[1].node.label);
 
                     u.id = cluster.clusterData.targets[1].node.id;
-                    u.isCluster = cluster.clusterData.targets[1].node.isCluster;
-                    u.targets = cloner.clone(cluster.clusterData.targets[1].node.targets);
                     u.pos = new Point(cluster.pos.x, cluster.pos.y);
                     u.setWeight(cluster.clusterData.targets[1].node.weight);
                     graph.vertices[u.id] = u;
@@ -259,35 +331,12 @@ WalshawLayout.prototype = {
                 }
             }
 
-           /* var graphForEdges = this.graphCollection[l];
-
-            for (var j = graphForEdges.vertices.length-1; j >= 0; j--) {
-                if (typeof graph.vertices[j] === 'undefined' || typeof graphForEdges.vertices[j] === 'undefined') continue;
-
-                for (var k = graphForEdges.vertices.length-1; k >= 0; k--) {
-                    if (j === k || typeof graph.vertices[k] === 'undefined' || typeof graphForEdges.vertices[k] === 'undefined') continue;
-
-                    if (hasEdge(graphForEdges, j, k) && !hasEdge(graph, j, k)) {
-                        var e = getEdge(graphForEdges, j, k);
-
-                        if (e) {
-                            graph.addEdge(graph.vertices[j], graph.vertices[k], e.options);
-                        } else {
-                            graph.addEdge(graph.vertices[j], graph.vertices[k]);
-                        }
-                    }
-
-                    if (!hasEdge(graphForEdges, j, k) && hasEdge(graph, j, k)) {
-                        graph.removeEdge(j, k);
-                    }
-                }
-            }
-*/
             this.k = this.k * Math.sqrt(4 / 5);
+            delete this.graphCollection[l];
         }
 
         delete this.graphCollection;
-    },
+    },*/
 
     step: function (t) {
         var graph = this.graph;
@@ -319,7 +368,7 @@ WalshawLayout.prototype = {
 
                     delta = u.pos.subtract(v.pos);
                     if (delta.magnitude() < 0.1) {
-                        delta = new Point((0.1 + Math.random() * 0.1), (0.1 + Math.random() * 10));
+                        delta = new Point((0.1 + Math.random() * 0.1), (0.1 + Math.random() * 0.1));
                     }
 
                     var fr = this.fr(delta.magnitude(), u.getWeight());
@@ -360,7 +409,7 @@ WalshawLayout.prototype = {
 
         this.extending();
 
-      /*  var iter = 0;
+        var iter = 0;
         while (iter <= this.maxIterations) {
             this.step(0.9);
             iter++;
@@ -368,10 +417,10 @@ WalshawLayout.prototype = {
 
         this.redraw();
 
-        console.timeEnd('Start algorithm execution');*/
+        console.timeEnd('Start algorithm execution');
 
 
-        var self = this;
+        /*var self = this;
         var iter = 0;
         var animate = function () {
             self.reqAnimId = requestAnimationFrame(animate);
@@ -380,13 +429,14 @@ WalshawLayout.prototype = {
             self.redraw();
 
             iter++;
+            console.log(iter);
 
             if (iter > self.maxIterations) {
                 self.stop();
             }
         };
 
-        animate();
+        animate();*/
     }
 };
 

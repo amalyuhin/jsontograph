@@ -142,6 +142,8 @@ test("process", function(){
 
             var e = adjacencies[u.id];
 
+            console.log('options:', e);
+
             if (typeof e !== 'undefined' && !g.hasEdge(v.id, u.id)) {
                 console.log('add edge:', v.label, ' - ', u.label);
                 g.addEdge(v, u, e);

@@ -8,8 +8,8 @@ function FRLayout(canvas, graph) {
     this.area = this.canvasWidth * this.canvasHeight;
     this.k = Math.sqrt(this.area / graph.vertices.length);
 
-    this.t = 0.9;
-    this.dt = 0.001;
+    this.t = 9;
+    this.dt = 0.1;
 }
 
 FRLayout.prototype = {
