@@ -57,7 +57,7 @@ Graph.prototype = {
     },
 
     addEdge: function (v, u, options) {
-        if (!this.hasEdge(v.id, u.id) && v.id != u.id) {
+        if (!this.hasEdge(v.id, u.id) && v.id !== u.id) {
             var edge = new Edge(v, u, options);
 
             this.edges[this.edges.length] = edge;
@@ -72,13 +72,13 @@ Graph.prototype = {
             this.edgesMap[v.id][u.id] = true;
             this.edgesMap[u.id][v.id] = true;
 
-            this.adjacency[v.id] = this.adjacency[v.id] || {};
-            this.adjacency[v.id][u.id] = this.adjacency[v.id][u.id] || [];
-            this.adjacency[u.id] = this.adjacency[u.id] || {};
-            this.adjacency[u.id][v.id] = this.adjacency[u.id][v.id] || [];
+            this.adjacency[v.id] = this.adjacency[v.id] || [];
+            this.adjacency[v.id][u.id] = this.adjacency[v.id][u.id] || {};
+            this.adjacency[u.id] = this.adjacency[u.id] || [];
+            this.adjacency[u.id][v.id] = this.adjacency[u.id][v.id] || {};
 
-            this.adjacency[v.id][u.id].push(edge);
-            this.adjacency[u.id][v.id].push(edge);
+            this.adjacency[v.id][u.id] = edge;
+            this.adjacency[u.id][v.id] = edge;
 
             /*v.addNode(u);
             u.addNode(v);
@@ -105,9 +105,15 @@ Graph.prototype = {
         if (this.edgesMap[v_id]) {
             this.edgesMap[v_id][u_id] = false;
         }
-
         if (this.edgesMap[u_id]) {
             this.edgesMap[u_id][v_id] = false;
+        }
+
+        if (this.adjacency[v_id]) {
+            this.adjacency[v_id][u_id] = undefined;
+        }
+        if (this.adjacency[u_id]) {
+            this.adjacency[u_id][v_id] = undefined;
         }
 
         this.edgesCount--;
@@ -131,9 +137,15 @@ Graph.prototype = {
             if (this.edgesMap[id]) {
                 this.edgesMap[id][j] = false;
             }
-
             if (this.edgesMap[j]) {
                 this.edgesMap[j][id] = false;
+            }
+
+            if (this.adjacency[id]) {
+                this.adjacency[id][j] = undefined;
+            }
+            if (this.adjacency[j]) {
+                this.adjacency[j][id] = undefined;
             }
         }
 
@@ -148,10 +160,11 @@ Graph.prototype = {
     },
 
     getEdge: function (v_id, u_id) {
-        var edgesLength = this.getEdgesCount();
+        var edgesLength = this.edges.length;
 
         for (var i = 0; i < edgesLength; i++) {
             var e = this.edges[i];
+            if (typeof e === 'undefined') continue;
 
             if ((e.v.id === v_id && e.u.id === u_id) || (e.v.id === u_id && e.u.id === v_id)) {
                 return e;
@@ -241,7 +254,7 @@ function Vertex(label, options) {
     this.isSelected = false;
     this.degree = 0;
     this.isCluster = false;
-    this.targets = [];
+    this.clusterData = {};
 
     if (typeof(options) === 'object') {
         this.options = $.extend(defaults, options);

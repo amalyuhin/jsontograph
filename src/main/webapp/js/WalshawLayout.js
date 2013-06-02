@@ -15,7 +15,7 @@ function WalshawLayout(canvas, graph) {
 
     this.area = this.canvasWidth * this.canvasHeight;
     this.k = 0;
-    this.maxIterations = 350;
+    this.maxIterations = 300;
 
     this.graphCollection = [];
     this.isMarked = [];
@@ -89,6 +89,7 @@ WalshawLayout.prototype = {
         this.addGraph(graph);
 
         // Повторяем, пока количество вершин больше 2
+        var level = 1;
         while (vertexCount > 2) {
             var count = vertexCount;
 
@@ -108,10 +109,23 @@ WalshawLayout.prototype = {
                     // Помечаем вершины
                     this.isMarked[neighbor.id] = true;
 
-                    var cluster = new Vertex(v.label + "_" + neighbor.label);
+                    var cluster = new Vertex(v.label + ":" + neighbor.label);
                     cluster.isCluster = true;
-                    cluster.targets.push(cloner.clone(v));
-                    cluster.targets.push(cloner.clone(neighbor));
+
+                    var targets = [];
+                    targets.push({
+                        node: cloner.clone(v),
+                        neighbors: cloner.clone(graph.adjacency[v.id])
+                    });
+                    targets.push({
+                        node: cloner.clone(neighbor),
+                        neighbors: cloner.clone(graph.adjacency[neighbor.id])
+                    });
+
+                    cluster.clusterData = {
+                        level: level,
+                        targets: targets
+                    };
 
                     graph.addVertex(cluster);
 
@@ -137,6 +151,7 @@ WalshawLayout.prototype = {
 
             // Добавляем полученный граф в коллекцию
             this.addGraph(graph);
+            level++;
 
             vertexCount = graph.getVerticesCount();
             if (count === vertexCount) {
@@ -156,10 +171,11 @@ WalshawLayout.prototype = {
         }
 
         this.k = v1.subtract(v2).magnitude();
+        console.log(this.k);
     },
 
     extending: function () {
-        function hasEdge(g, vId, uId) {
+       /* function hasEdge(g, vId, uId) {
             return ((typeof(g.edgesMap[vId]) !== 'undefined' && g.edgesMap[vId][uId] === true) ||
                 (typeof(g.edgesMap[uId]) !== 'undefined' && g.edgesMap[uId][vId] === true));
         }
@@ -177,41 +193,73 @@ WalshawLayout.prototype = {
             }
 
             return null;
+        }*/
+
+        function addClusterNeighbors(g, v, adjacencies) {
+            console.log(adjacencies);
+
+            for (var i = 0; i < g.vertices.length; i++) {
+                var u = g.getNode(i);
+                if (typeof u === 'undefined' || v.id === u.id) continue;
+
+                var e = adjacencies[u.id];
+
+                if (typeof e !== 'undefined' && !g.hasEdge(v.id, u.id)) {
+                    console.log('add edge:', v.label, ' - ', u.label);
+                    g.addEdge(v, u, e);
+
+                } else if (g.hasEdge(v.id, u.id) && typeof e === 'undefined') {
+                    console.log('remove edge:', v.label, ' - ', u.label);
+                    g.removeEdge(v.id, u.id);
+                }
+            }
         }
 
         var graph = this.graph;
         var length = this.graphCollection.length - 1;
 
-        for (var l = length; --l >= 0;) {
-            var graphForVertices = this.graphCollection[l+1];
+        for (var l = length; l > 2; l--) {
+            var graphForVertices = this.graphCollection[l];
 
             for (var i = graphForVertices.vertices.length-1; i >= 0; i--) {
-                var node = graphForVertices.vertices[i];
-                if (typeof node === 'undefined') continue;
+                var cluster = graphForVertices.vertices[i];
+                if (typeof cluster === 'undefined') continue;
 
-                if (node.isCluster &&
-                    typeof graph.getNode(node.targets[0].id) === 'undefined' &&
-                    typeof graph.getNode(node.targets[1].id) === 'undefined'
+                if (cluster.isCluster && cluster.clusterData.level === l &&
+                    typeof graph.getNode(cluster.clusterData.targets[0].node.id) === 'undefined' &&
+                    typeof graph.getNode(cluster.clusterData.targets[1].node.id) === 'undefined'
                 ) {
-                    var v = new Vertex(node.targets[0].label);
-                    v.id = node.targets[0].id;
-                    v.pos = new Point(node.pos.x, node.pos.y);
-                    v.setWeight(node.targets[0].weight);
+                    var v = new Vertex(cluster.clusterData.targets[0].node.label);
+
+                    v.id = cluster.clusterData.targets[0].node.id;
+                    v.isCluster = cluster.clusterData.targets[0].node.isCluster;
+                    v.targets = cloner.clone(cluster.clusterData.targets[0].node.targets);
+                    v.pos = new Point(cluster.pos.x, cluster.pos.y);
+                    v.setWeight(cluster.clusterData.targets[0].node.weight);
                     graph.vertices[v.id] = v;
                     graph.verticesCount++;
 
-                    var u = new Vertex(node.targets[1].label);
-                    u.id = node.targets[1].id;
-                    u.pos = new Point(node.pos.x, node.pos.y);
-                    u.setWeight(node.targets[1].weight);
+                    var u = new Vertex(cluster.clusterData.targets[1].node.label);
+
+                    u.id = cluster.clusterData.targets[1].node.id;
+                    u.isCluster = cluster.clusterData.targets[1].node.isCluster;
+                    u.targets = cloner.clone(cluster.clusterData.targets[1].node.targets);
+                    u.pos = new Point(cluster.pos.x, cluster.pos.y);
+                    u.setWeight(cluster.clusterData.targets[1].node.weight);
                     graph.vertices[u.id] = u;
                     graph.verticesCount++;
 
-                    graph.removeVertex(node.id);
+                    var adjacencies1 = cloner.clone(cluster.clusterData.targets[0].neighbors);
+                    var adjacencies2 = cloner.clone(cluster.clusterData.targets[1].neighbors);
+
+                    graph.removeVertex(cluster.id);
+
+                    addClusterNeighbors(graph, v, adjacencies1);
+                    addClusterNeighbors(graph, u, adjacencies2);
                 }
             }
 
-            var graphForEdges = this.graphCollection[l];
+           /* var graphForEdges = this.graphCollection[l];
 
             for (var j = graphForEdges.vertices.length-1; j >= 0; j--) {
                 if (typeof graph.vertices[j] === 'undefined' || typeof graphForEdges.vertices[j] === 'undefined') continue;
@@ -234,7 +282,7 @@ WalshawLayout.prototype = {
                     }
                 }
             }
-
+*/
             this.k = this.k * Math.sqrt(4 / 5);
         }
 
@@ -309,9 +357,10 @@ WalshawLayout.prototype = {
         console.time('Start algorithm execution');
 
         this.coarsening();
+
         this.extending();
 
-        var iter = 0;
+      /*  var iter = 0;
         while (iter <= this.maxIterations) {
             this.step(0.9);
             iter++;
@@ -319,10 +368,10 @@ WalshawLayout.prototype = {
 
         this.redraw();
 
-        console.timeEnd('Start algorithm execution');
+        console.timeEnd('Start algorithm execution');*/
 
 
-        /*var self = this;
+        var self = this;
         var iter = 0;
         var animate = function () {
             self.reqAnimId = requestAnimationFrame(animate);
@@ -337,7 +386,7 @@ WalshawLayout.prototype = {
             }
         };
 
-        animate();*/
+        animate();
     }
 };
 

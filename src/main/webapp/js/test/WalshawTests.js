@@ -90,3 +90,132 @@ test("extending", function(){
 
     equals(this.layout.graph.getVerticesCount(), 5);
 });
+
+test("process", function(){
+    var layout = this.layout;
+
+    layout.coarsening();
+
+    var graph = layout.graph;
+    var length = layout.graphCollection.length - 1;
+
+    for (var m = layout.graphCollection.length - 1; m >= 0; m--) {
+        console.log('l:', m);
+
+        for (var n = layout.graphCollection[m].vertices.length; n >= 0; n--) {
+            var q = layout.graphCollection[m].vertices[n];
+            if (typeof q === 'undefined') continue;
+
+            console.log('   ', q.id, ':', q.label);
+
+        }
+    }
+
+    console.log('--------------------');
+
+    for (var i = 0; i < layout.graph.vertices.length; i++) {
+        var v = layout.graph.getNode(i);
+        if (typeof v === 'undefined') continue;
+
+        if (v.isCluster) {
+            console.log('node:', v.id, v.label);
+            console.log('   ', 'target1:', v.clusterData.targets[0].node.id, v.clusterData.targets[0].node.label);
+            console.log('   ', 'neighbors1:', v.clusterData.targets[0].neighbors);
+            console.log('   ', 'target2:', v.clusterData.targets[1].node.id, v.clusterData.targets[1].node.label);
+            console.log('   ', 'neighbors2:', v.clusterData.targets[1].neighbors);
+        }
+    }
+
+    function addClusterNeighbors(g, v, adjacencies) {
+        console.log('graph:');
+        for (var w = 0; w < g.vertices.length; w++) {
+            var p = g.getNode(w);
+
+            if (typeof p !== 'undefined') {
+                console.log('   ', 'node:', p.id, p.label);
+            }
+        }
+
+        for (var i = 0; i < g.vertices.length; i++) {
+            var u = g.getNode(i);
+            if (typeof u === 'undefined' || v.id === u.id) continue;
+
+            var e = adjacencies[u.id];
+
+            if (typeof e !== 'undefined' && !g.hasEdge(v.id, u.id)) {
+                console.log('add edge:', v.label, ' - ', u.label);
+                g.addEdge(v, u, e);
+
+            } else if (g.hasEdge(v.id, u.id) && typeof e === 'undefined') {
+                console.log('remove edge:', v.label, ' - ', u.label);
+                g.removeEdge(v.id, u.id);
+            }
+        }
+    }
+
+    for (var p = layout.graphCollection.length-1; p > 0; p--) {
+        var graphForVertices = layout.graphCollection[p];
+
+        console.log('level:', p);
+
+        for (var i = graphForVertices.vertices.length-1; i >= 0; i--) {
+
+            var cluster = graphForVertices.vertices[i];
+            if (typeof cluster === 'undefined') continue;
+
+            if (cluster.isCluster && cluster.clusterData.level === p &&
+                typeof graph.getNode(cluster.clusterData.targets[0].node.id) === 'undefined' &&
+                typeof graph.getNode(cluster.clusterData.targets[1].node.id) === 'undefined'
+            ) {
+                var v = new Vertex(cluster.clusterData.targets[0].node.label);
+
+                console.log('cluster:', cluster.id, cluster.label);
+
+                v.id = cluster.clusterData.targets[0].node.id;
+                /*v.isCluster = cluster.targets[0].node.isCluster;
+                v.targets = cloner.clone(cluster.targets[0].node.targets);*/
+                v.pos = new Point(cluster.pos.x, cluster.pos.y);
+                v.setWeight(cluster.clusterData.targets[0].node.weight);
+                graph.vertices[v.id] = v;
+                graph.verticesCount++;
+
+                console.log('add node', v.id, v.label);
+
+                var u = new Vertex(cluster.clusterData.targets[1].node.label);
+
+                u.id = cluster.clusterData.targets[1].node.id;
+              /*  u.isCluster = cluster.targets[1].node.isCluster;
+                u.targets = cloner.clone(cluster.targets[1].node.targets);*/
+                u.pos = new Point(cluster.pos.x, cluster.pos.y);
+                u.setWeight(cluster.clusterData.targets[1].node.weight);
+                graph.vertices[u.id] = u;
+                graph.verticesCount++;
+
+                console.log('add node', u.id, u.label);
+
+                var adjacencies1 = cloner.clone(cluster.clusterData.targets[0].neighbors);
+                var adjacencies2 = cloner.clone(cluster.clusterData.targets[1].neighbors);
+
+                graph.removeVertex(cluster.id);
+
+                console.log('renove node', cluster.id, cluster.label);
+
+                addClusterNeighbors(graph, v, adjacencies1);
+                addClusterNeighbors(graph, u, adjacencies2);
+
+                console.log('--------------------');
+            }
+        }
+
+        for (var i = 0; i < layout.graph.vertices.length; i++) {
+            var v = layout.graph.getNode(i);
+            if (typeof v === 'undefined') continue;
+
+            console.log('node:', v.id, v.label);
+            console.log('   ', 'is_cluster:', v.isCluster);
+            console.log('   ', 'targets:', v.targets);
+        }
+
+        console.log('*********************');
+    }
+});
