@@ -15,10 +15,9 @@ function WalshawLayout(canvas, graph) {
 
     this.area = this.canvasWidth * this.canvasHeight;
     this.k = 0;
-    this.maxIterations = 50;
+    this.maxIterations = 80;
 
     this.graphCollection = [];
-    this.isMarked = [];
 }
 
 WalshawLayout.prototype = {
@@ -44,13 +43,12 @@ WalshawLayout.prototype = {
 
     getFirstNeighbor: function (id) {
         var graph = this.graph;
-        var verticesNb = graph.vertices.length;
 
-        for (var i = 0; i < verticesNb; i++) {
+        for (var i = 0, len = graph.vertices.length; i < len; i++) {
             var node = graph.getNode(i);
-            if (typeof node === 'undefined' || this.isMarked[node.id]) continue;
+            if (node === undefined) continue;
 
-            if (graph.hasEdge(id, i)) {
+            if (graph.hasEdge(id, node.id)) {
                 return node;
             }
         }
@@ -61,16 +59,15 @@ WalshawLayout.prototype = {
     getMinWeightNeighbor: function (id) {
         var graph = this.graph;
         var neighbor = this.getFirstNeighbor(id);
-        var verticesNb = graph.vertices.length;
 
-        if (neighbor === null) return neighbor;
+        if (neighbor === null) return null;
 
         // Ищем соседа с минимальным весом
-        for (var i = graph.vertices.length - 1; i >= 0; i--) {
-            if (graph.hasEdge(id, i)) {
-                var v = graph.getNode(i);
-                if (typeof v === 'undefined' || this.isMarked[v.id]) continue;
+        for (var i = 0, len = graph.vertices.length; i < len; i++) {
+            var v = graph.getNode(i);
+            if (v === undefined) continue;
 
+            if (graph.hasEdge(id, v.id)) {
                 if (neighbor.getWeight() > v.getWeight()) {
                     neighbor = v;
                 }
@@ -83,6 +80,7 @@ WalshawLayout.prototype = {
     coarsening: function () {
         var graph = this.graph;
         var vertexCount = graph.getVerticesCount();
+        var isMarked = [];
 
         // Добавляем исходный граф в коллекцию
         this.addGraph(graph);
@@ -94,20 +92,20 @@ WalshawLayout.prototype = {
             var i;
 
             // Сбрасываем отмеченные вершины
-            for (i = graph.vertices.length-1; i >= 0; i--) {
-                this.isMarked[i] = false;
-            }
+            graph.vertices.forEach(function(v){
+                isMarked[v.id] = false;
+            });
 
             for (i = graph.vertices.length-1; i >= 0; i--) {
                 var v = graph.getNode(i);
-                if (typeof v === 'undefined' || this.isMarked[v.id] === true) continue;
+                if (typeof v === 'undefined' || isMarked[v.id] === true) continue;
 
-                this.isMarked[v.id] = true;
+                isMarked[v.id] = true;
 
                 var neighbor = this.getMinWeightNeighbor(i);
-                if (neighbor !== null) {
+                if (neighbor !== null && !isMarked[neighbor.id]) {
                     // Помечаем вершины
-                    this.isMarked[neighbor.id] = true;
+                    isMarked[neighbor.id] = true;
 
                     var cluster = new Vertex(v.label + ":" + neighbor.label);
                     cluster.isCluster = true;
@@ -126,7 +124,7 @@ WalshawLayout.prototype = {
                     cluster.setWeight(v.getWeight() + neighbor.getWeight());
                     cluster.pos = v.pos.center(neighbor.pos);
 
-                    this.isMarked[cluster.id] = true;
+                    isMarked[cluster.id] = true;
 
                     for (var k = graph.vertices.length-1; k >= 0; k--) {
                         if (i === k || k === neighbor.id) continue;
@@ -140,8 +138,8 @@ WalshawLayout.prototype = {
                         }
                     }
 
-                    graph.removeVertex(v.id);
                     graph.removeVertex(neighbor.id);
+                    graph.removeVertex(v.id);
                 }
             }
 
@@ -155,26 +153,24 @@ WalshawLayout.prototype = {
             }
         }
 
-        var v1, v2;
-        for (var key in graph.vertices) if (graph.vertices.hasOwnProperty(key)) {
-            graph.vertices[key].pos = Point.random();
-
-            if (!v1) {
-                v1 = graph.vertices[key].pos;
-            } else {
-                v2 = graph.vertices[key].pos;
-            }
+        console.log(vertexCount);
+        if (vertexCount > 2) {
+            throw "Граф не является связным. Процесс будет завершен.";
         }
 
-        this.k = v1.subtract(v2).magnitude();
+        var initPos = [];
+        graph.vertices.forEach(function(v){
+            v.updatePosition(Point.random());
+            initPos.push(v.pos);
+        });
+
+        this.k = initPos[0].subtract(initPos[1]).magnitude();
     },
 
     extending: function () {
         function hasEdge(g, vId, uId) {
-            return (
-                (typeof g.edgesMap[vId] !== 'undefined' && g.edgesMap[vId][uId] === true) ||
-                (typeof g.edgesMap[uId] !== 'undefined' && g.edgesMap[uId][vId] === true)
-            );
+            return ((g.edgesMap[vId] != undefined && g.edgesMap[vId][uId]) ||
+                    (g.edgesMap[uId] != undefined && g.edgesMap[uId][vId]));
         }
 
         function getEdge(g, vId, uId) {
@@ -182,7 +178,7 @@ WalshawLayout.prototype = {
 
             for (var i = 0; i < edgesLength; i++) {
                 var e = g.edges[i];
-                if (typeof e === 'undefined') continue;
+                if (e === undefined) continue;
 
                 if ((e.v.id === vId && e.u.id === uId) || (e.v.id === uId && e.u.id === vId)) {
                     return e;
@@ -193,21 +189,20 @@ WalshawLayout.prototype = {
         }
 
         var graph = this.graph;
-        var length = this.graphCollection.length - 1;
         var minLevel = 0;
         var g;
 
-        for (var l = length; l >= minLevel; l--) {
+        for (var l = this.graphCollection.length - 1; l >= minLevel; l--) {
             g = this.graphCollection[l];
 
             if (l > minLevel) {
                 for (var i = g.vertices.length-1; i >= 0; i--) {
                     var cluster = g.vertices[i];
-                    if (typeof cluster === 'undefined') continue;
+                    if (cluster === undefined) continue;
 
                     if (cluster.isCluster && cluster.clusterData.level === l &&
-                        typeof graph.getNode(cluster.clusterData.targets[0].node.id) === 'undefined' &&
-                        typeof graph.getNode(cluster.clusterData.targets[1].node.id) === 'undefined'
+                        graph.getNode(cluster.clusterData.targets[0].node.id) === undefined &&
+                        graph.getNode(cluster.clusterData.targets[1].node.id) === undefined
                     ) {
                         var v = new Vertex(cluster.clusterData.targets[0].node.label);
 
@@ -237,18 +232,18 @@ WalshawLayout.prototype = {
 
             } else {
                 for (var j = g.vertices.length-1; j >= 0; j--) {
-                    if (typeof graph.vertices[j] === 'undefined' || typeof g.vertices[j] === 'undefined') continue;
+                    if (graph.vertices[j] === undefined || g.vertices[j] === undefined) continue;
 
                     for (var k = g.vertices.length-1; k >= 0; k--) {
-                        if (j === k || typeof graph.vertices[k] === 'undefined' || typeof g.vertices[k] === 'undefined') continue;
+                        if (j === k || graph.vertices[k] === undefined || g.vertices[k] === undefined) continue;
 
                         if (hasEdge(g, j, k) && !hasEdge(graph, j, k)) {
                             var e = getEdge(g, j, k);
 
-                            if (e) {
-                                graph.addEdge(graph.vertices[j], graph.vertices[k], e.options);
-                            } else {
+                            if (e === null) {
                                 graph.addEdge(graph.vertices[j], graph.vertices[k]);
+                            } else {
+                                graph.addEdge(graph.vertices[j], graph.vertices[k], e.options);
                             }
                         }
 
@@ -259,80 +254,12 @@ WalshawLayout.prototype = {
                 }
             }
 
-            this.k = this.k * Math.sqrt(4/5);
+            this.k *= Math.sqrt(4/5);
             delete this.graphCollection[l];
         }
 
         delete this.graphCollection;
     },
-
-    /*extending: function () {
-        function addClusterNeighbors(g, v, adjacencies) {
-            console.log(adjacencies);
-
-            for (var i = 0; i < g.vertices.length; i++) {
-                var u = g.getNode(i);
-                if (typeof u === 'undefined' || v.id === u.id) continue;
-
-                var e = adjacencies[u.id];
-
-                if (typeof e !== 'undefined' && !g.hasEdge(v.id, u.id)) {
-                    //console.log('add edge:', v.label, ' - ', u.label);
-                    g.addEdge(v, u, e.options);
-
-                } else if (g.hasEdge(v.id, u.id) && typeof e === 'undefined') {
-                    //console.log('remove edge:', v.label, ' - ', u.label);
-                    g.removeEdge(v.id, u.id);
-                }
-            }
-        }
-
-        var graph = this.graph;
-        var length = this.graphCollection.length - 1;
-
-        for (var l = length; l >= 0; l--) {
-            var graphForVertices = this.graphCollection[l];
-
-            for (var i = graphForVertices.vertices.length-1; i >= 0; i--) {
-                var cluster = graphForVertices.vertices[i];
-                if (typeof cluster === 'undefined') continue;
-
-                if (cluster.isCluster && cluster.clusterData.level === l &&
-                    typeof graph.getNode(cluster.clusterData.targets[0].node.id) === 'undefined' &&
-                    typeof graph.getNode(cluster.clusterData.targets[1].node.id) === 'undefined'
-                ) {
-                    var v = new Vertex(cluster.clusterData.targets[0].node.label);
-
-                    v.id = cluster.clusterData.targets[0].node.id;
-                    v.pos = new Point(cluster.pos.x, cluster.pos.y);
-                    v.setWeight(cluster.clusterData.targets[0].node.weight);
-                    graph.vertices[v.id] = v;
-                    graph.verticesCount++;
-
-                    var u = new Vertex(cluster.clusterData.targets[1].node.label);
-
-                    u.id = cluster.clusterData.targets[1].node.id;
-                    u.pos = new Point(cluster.pos.x, cluster.pos.y);
-                    u.setWeight(cluster.clusterData.targets[1].node.weight);
-                    graph.vertices[u.id] = u;
-                    graph.verticesCount++;
-
-                    var adjacencies1 = cloner.clone(cluster.clusterData.targets[0].neighbors);
-                    var adjacencies2 = cloner.clone(cluster.clusterData.targets[1].neighbors);
-
-                    graph.removeVertex(cluster.id);
-
-                    addClusterNeighbors(graph, v, adjacencies1);
-                    addClusterNeighbors(graph, u, adjacencies2);
-                }
-            }
-
-            this.k = this.k * Math.sqrt(4 / 5);
-            delete this.graphCollection[l];
-        }
-
-        delete this.graphCollection;
-    },*/
 
     step: function (t) {
         var graph = this.graph;
@@ -394,79 +321,27 @@ WalshawLayout.prototype = {
         }
     },
 
-    /*step: function (t) {
-        var graph = this.graph;
-        var verticesNb = graph.vertices.length;
-        var v, u, delta, i, j;
-
-        var converged = false;
-
-        while (!converged) {
-            converged = true;
-
-            for (i = verticesNb - 1; i >= 0; i--) {
-                v = graph.getNode(i);
-                if (typeof v === 'undefined') continue;
-
-                var disp = new Point(0, 0);
-
-                for (j = verticesNb - 1; j >= 0; j--) {
-                    u = graph.getNode(j);
-                    if (typeof u === 'undefined' || v.id === u.id) continue;
-
-                    delta = u.pos.subtract(v.pos);
-                    if (delta.magnitude() < 0.1) {
-                        delta = new Point((0.1 + Math.random() * 0.1), (0.1 + Math.random() * 0.1));
-                    }
-
-                    var fr = this.fr(delta.magnitude(), u.getWeight());
-                    disp = disp.add(delta.normalize().multiply(fr));
-                }
-
-                for (j = verticesNb - 1; j >= 0; j--) {
-                    u = graph.getNode(j);
-                    if (typeof u === 'undefined' || !graph.hasEdge(v.id, u.id)) continue;
-
-                    delta = u.pos.subtract(v.pos);
-                    if (delta.magnitude() < 0.1) {
-                        delta = new Point((0.1 + Math.random() * 0.1), (0.1 + Math.random() * 0.1));
-                    }
-
-                    var fa = this.fa(delta.magnitude());
-                    disp = disp.add(delta.normalize().multiply(fa));
-                }
-
-                var oldPos = new Point(v.pos.x, v.pos.y);
-
-                if (disp.magnitude() > 0) {
-                    var newPos = v.pos.add(disp.normalize().multiply(Math.min(t, disp.magnitude())));
-                    v.updatePosition(newPos);
-                }
-
-                if (v.pos.subtract(oldPos).magnitude() > (this.k * 0.001)) {
-                    converged = false;
-                }
-            }
-
-            t = this.cool(t);
-        }
-    },*/
-
     run: function () {
         console.time('Start algorithm execution');
 
-        this.coarsening();
-        this.extending();
+        try {
+            this.coarsening();
+            this.extending();
 
-        var iter = 0;
-        while (iter <= this.maxIterations) {
-            this.step(0.9);
-            iter++;
+            var iter = 0;
+            while (iter <= this.maxIterations) {
+                this.step(0.9);
+                iter++;
+            }
+
+            this.redraw();
+
+        } catch (e) {
+            alert(e);
+
+        } finally {
+            console.timeEnd('Start algorithm execution');
         }
-
-        this.redraw();
-
-        console.timeEnd('Start algorithm execution');
 
 
         /*var self = this;

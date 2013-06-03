@@ -67,19 +67,19 @@ Graph.prototype = {
     },
 
     addEdge: function (v, u, options) {
-        if (!this.hasEdge(v.id, u.id) && v.id !== u.id) {
+        if (v.id !== u.id && !this.hasEdge(v.id, u.id)) {
             var edge = new Edge(v, u, options);
 
             this.edges[this.edges.length] = edge;
 
-            if (!this.edgesMap[v.id]) {
+            if (this.edgesMap[v.id] == undefined) {
                 this.edgesMap[v.id] = [];
             }
-            if (!this.edgesMap[u.id]) {
+            this.edgesMap[v.id][u.id] = true;
+
+            if (this.edgesMap[u.id] == undefined) {
                 this.edgesMap[u.id] = [];
             }
-
-            this.edgesMap[v.id][u.id] = true;
             this.edgesMap[u.id][v.id] = true;
 
             this.adjacency[v.id] = this.adjacency[v.id] || [];
@@ -101,12 +101,13 @@ Graph.prototype = {
 
     removeEdge: function (v_id, u_id) {
         var edgesLength = this.getEdgesCount;
+
         for (var i = 0; i < edgesLength; i++) {
-            if (!this.edges[i]) continue;
+            if (this.edges[i] == undefined) continue;
 
             if ((this.edges[i].v.id === v_id && this.edges[i].u.id === u_id) ||
                 (this.edges[i].v.id === u_id && this.edges[i].u.id === v_id)
-                ) {
+            ) {
                 this.edges.splice(i, 1);
                 i--;
             }
@@ -133,8 +134,9 @@ Graph.prototype = {
         delete this.vertices[id];
 
         var edgesLength = this.getEdgesCount();
+
         for (var i = 0; i < edgesLength; i++) {
-            if (!this.edges[i]) continue;
+            if (this.edges[i] == undefined) continue;
 
             if (this.edges[i].v.id === id || this.edges[i].u.id === id) {
                 this.edges.splice(i, 1);
@@ -163,10 +165,8 @@ Graph.prototype = {
     },
 
     hasEdge: function (v_id, u_id) {
-        return (
-            (typeof this.edgesMap[v_id] !== 'undefined' && this.edgesMap[v_id][u_id] === true) ||
-            (typeof this.edgesMap[u_id] !== 'undefined' && this.edgesMap[u_id][v_id] === true)
-        );
+        return ((this.edgesMap[v_id] != undefined && this.edgesMap[v_id][u_id] === true) ||
+                (this.edgesMap[u_id] != undefined && this.edgesMap[u_id][v_id] === true));
     },
 
     getEdge: function (v_id, u_id) {
@@ -174,7 +174,7 @@ Graph.prototype = {
 
         for (var i = 0; i < edgesLength; i++) {
             var e = this.edges[i];
-            if (typeof e === 'undefined') continue;
+            if (e === undefined) continue;
 
             if ((e.v.id === v_id && e.u.id === u_id) || (e.v.id === u_id && e.u.id === v_id)) {
                 return e;
@@ -224,28 +224,36 @@ Graph.prototype = {
     }
 };
 
-Graph.random = function () {
-    var g = new Graph();
-    //var verticesNb = Math.floor(150 + Math.random() * 100);
-    var verticesNb = 100;
+Graph.random = function (nodesCount, edgesCount) {
+    nodesCount = nodesCount || 100;
+    edgesCount = edgesCount || nodesCount - 1;
 
-    for (var i = 0; i < verticesNb; i++) {
-        var v = new Vertex('Node_' + i);
-        g.addVertex(v);
+    var g = new Graph();
+    var i;
+
+    function createEdge(vId, uId) {
+        var v = g.getNode(vId);
+        var u = g.getNode(uId);
+
+        if (vId === uId || g.hasEdge(vId, uId) || v == undefined || u == undefined) {
+            return null;
+        }
+
+        return new Edge(v, u);
     }
 
-    for (var l = 0; l < verticesNb; l++) {
-        for (var j = 0; j < verticesNb; j++) {
-            var hasEdge = Math.floor(1 + Math.random() * 200);
+    for (i = 0; i < nodesCount; i++) {
+        g.addVertex(new Vertex(i + 1));
+    }
 
-            if (hasEdge != 5) {
-                continue;
-            }
+    for (i = 0; i < edgesCount; i++) {
+        var e = undefined;
 
-            if (l != j) {
-                g.addEdge(g.vertices[l], g.vertices[j]);
-            }
+        while (e == undefined) {
+            e = createEdge(Math.floor(Math.random() * (nodesCount + 1)), Math.floor(Math.random() * (nodesCount + 1)));
         }
+
+        g.addEdge(e.v, e.u);
     }
 
     return g;
@@ -423,29 +431,33 @@ Edge.prototype = {
 };
 
 var cloner = {
-     _clone: function _clone(obj) {
-         var out;
-         var value;
+    _clone: function _clone(obj) {
+        var out;
+        var value;
 
-         if (obj instanceof Array) {
-             out = [];
-             for (var i = 0, len = obj.length; i < len; i++) {
-                 value = obj[i];
-                 out[i] = (value !== null && typeof value === "object") ? _clone(value) : value;
-             }
-         } else {
-             out = {};
-             for (var key in obj) {
-                 if (obj.hasOwnProperty(key)) {
-                     value = obj[key];
-                     out[key] = (value !== null && typeof value === "object") ? _clone(value) : value;
-                 }
-             }
-         }
-         return out;
-     },
+        if (obj instanceof Array) {
+            out = [];
+            for (var i = 0, len = obj.length; i < len; i++) {
+                value = obj[i];
+                out[i] = (value !== null && typeof value === "object") ? _clone(value) : value;
+            }
+        } else {
+            out = {};
+            for (var key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    value = obj[key];
+                    out[key] = (value !== null && typeof value === "object") ? _clone(value) : value;
+                }
+            }
+        }
+        return out;
+    },
 
-     clone: function(it) {
-        return this._clone({it: it}).it;
-     }
+    clone: function(it) {
+       return this._clone({it: it}).it;
+    },
+
+    cloneObject: function(obj) {
+        return JSON.parse(JSON.stringify(obj));
+    }
  };

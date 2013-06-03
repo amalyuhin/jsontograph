@@ -165,7 +165,11 @@
                     data: data,
                     dataType: 'json',
                     success: function(json) {
-                        init(json);
+                        try {
+                            init(json);
+                        } catch (e) {
+                            alert(e);
+                        }
                     },
                     complete: function(){
                         $('#loader').hide();
@@ -215,6 +219,10 @@
             box.draw();
 
             console.timeEnd('Generate graph');
+
+            if (!graph.vertices.length) {
+                throw 'Нет данных для визуализации.';
+            }
 
             console.log('Vertices count: ' + graph.vertices.length);
             console.log('Edges count: ' + graph.edges.length);
