@@ -35,17 +35,11 @@ WalshawLayout.prototype = {
     },
 
     addGraph: function (graph) {
-        /*this.graphCollection[this.graphCollection.length] = {
+        this.graphCollection[this.graphCollection.length] = {
             vertices: cloner.clone(graph.vertices),
             edges: cloner.clone(graph.edges),
             edgesMap: cloner.clone(graph.edgesMap)
-        };*/
-        this.graphCollection[this.graphCollection.length] = cloner.clone(graph);
-        /*this.graphCollection[this.graphCollection.length] = {
-            vertices: graph.vertices.clone(),
-            edges: cloner.clone(graph.edges),
-            edgesMap: graph.edgesMap.clone()
-        };*/
+        };
     },
 
     getFirstNeighbor: function (id) {
@@ -242,8 +236,6 @@ WalshawLayout.prototype = {
                 }
 
             } else {
-                g = this.graphCollection[l];
-
                 for (var j = g.vertices.length-1; j >= 0; j--) {
                     if (typeof graph.vertices[j] === 'undefined' || typeof g.vertices[j] === 'undefined') continue;
 
@@ -352,13 +344,65 @@ WalshawLayout.prototype = {
         while (!converged) {
             converged = true;
 
-            /*var oldPos = [];
-            for (i = verticesNb - 1; i >= 0; i--) {
+            for (i = 0; i < verticesNb; i++) {
                 v = graph.getNode(i);
                 if (typeof v === 'undefined') continue;
 
-                oldPos[v.id] = new Point(v.pos.x, v.pos.y);
-            }*/
+                var disp = new Point(0, 0);
+
+                for (j = 0; j < verticesNb; j++) {
+                    u = graph.getNode(j);
+                    if (i === j || typeof u === 'undefined') continue;
+
+                    delta = u.pos.subtract(v.pos);
+                    if (delta.magnitude() < 0.1) {
+                        delta = new Point((0.1 + Math.random() * 0.1), (0.1 + Math.random() * 0.1));
+                    }
+
+                    disp = disp.add(delta.normalize().multiply(this.fr(delta.magnitude(), u.getWeight())));
+
+                    if (graph.hasEdge(v.id, u.id)) {
+                        disp = disp.add(delta.normalize().multiply(this.fa(delta.magnitude())));
+                    }
+                }
+
+                /*for (j = 0; j < verticesNb; j++) {
+                    u = graph.getNode(j);
+                    if (typeof u === 'undefined' || !graph.hasEdge(v.id, u.id)) continue;
+
+                    delta = u.pos.subtract(v.pos);
+                    if (delta.magnitude() < 0.1) {
+                        delta = new Point((0.1 + Math.random() * 0.1), (0.1 + Math.random() * 0.1));
+                    }
+
+                    disp = disp.add(delta.normalize().multiply(this.fa(delta.magnitude())));
+                }*/
+
+                var oldPos = new Point(v.pos.x, v.pos.y);
+
+                if (disp.magnitude() > 0) {
+                    var newPos = v.pos.add(disp.normalize().multiply(Math.min(t, disp.magnitude())));
+                    v.updatePosition(newPos);
+                }
+
+                if (v.pos.subtract(oldPos).magnitude() > (this.k * 0.01)) {
+                    converged = false;
+                }
+            }
+
+            t = this.cool(t);
+        }
+    },
+
+    /*step: function (t) {
+        var graph = this.graph;
+        var verticesNb = graph.vertices.length;
+        var v, u, delta, i, j;
+
+        var converged = false;
+
+        while (!converged) {
+            converged = true;
 
             for (i = verticesNb - 1; i >= 0; i--) {
                 v = graph.getNode(i);
@@ -406,16 +450,15 @@ WalshawLayout.prototype = {
 
             t = this.cool(t);
         }
-    },
+    },*/
 
     run: function () {
         console.time('Start algorithm execution');
 
         this.coarsening();
-
         this.extending();
 
-        /*var iter = 0;
+        var iter = 0;
         while (iter <= this.maxIterations) {
             this.step(0.9);
             iter++;
@@ -423,10 +466,10 @@ WalshawLayout.prototype = {
 
         this.redraw();
 
-        console.timeEnd('Start algorithm execution');*/
+        console.timeEnd('Start algorithm execution');
 
 
-        var self = this;
+        /*var self = this;
         var iter = 0;
         var animate = function () {
             self.reqAnimId = requestAnimationFrame(animate);
@@ -435,14 +478,13 @@ WalshawLayout.prototype = {
             self.redraw();
 
             iter++;
-            console.log(iter);
 
             if (iter > self.maxIterations) {
                 self.stop();
             }
         };
 
-        animate();
+        animate();*/
     }
 };
 
