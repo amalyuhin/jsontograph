@@ -187,22 +187,23 @@
             console.time('Generate graph');
 
             var graph = new Graph();
+            var i;
 
-            for (var i=0; i<data.nodes.length; i++) {
+            for (i = data.nodes.length - 1; i >= 0; i--) {
                 var node = data.nodes[i];
-                graph.addVertex(new Vertex(node.label, { 'id': node.id }));
+                graph.addVertex(new Vertex(node.label, { id: node.id }));
             }
 
             var lineColors = [];
-            for (var j=0; j<data.links.length; j++) {
-                var v = graph.vertices[data.links[j].from];
-                var u = graph.vertices[data.links[j].to];
+            for (i = data.links.length - 1; i >= 0; i--) {
+                var v = graph.vertices[data.links[i].from];
+                var u = graph.vertices[data.links[i].to];
 
                 if (v && u) {
-                    var lc = lineColors[data.links[j].type];
+                    var lc = lineColors[data.links[i].type];
                     if (!lc) {
                         lc = "rgba("+Math.round(Math.random()*255)+", "+Math.round(Math.random()*255)+", "+Math.round(Math.random()*255)+", .6)";
-                        lineColors[data.links[j].type] = lc;
+                        lineColors[data.links[i].type] = lc;
                     }
 
                     graph.addEdge(v, u, {lineColor: lc});

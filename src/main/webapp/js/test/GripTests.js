@@ -203,6 +203,18 @@ test("findNodeNeighbours", function(){
     }
 });
 
+test("setDiff", function(){
+    var layout = this.layout;
+    var copy = layout.graph.vertices.clone();
+
+    copy.shift();
+
+    console.log(layout.graph.vertices);
+    console.log(copy);
+
+    console.log(layout.graph.vertices.setdiff(copy));
+});
+
 test("process", function(){
     var layout = this.layout;
 
@@ -222,3 +234,4 @@ test("process", function(){
 
     debugNodes(layout.graph);
 });
+

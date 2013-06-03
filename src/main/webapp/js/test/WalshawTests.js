@@ -221,3 +221,20 @@ test("process", function(){
         console.log('*********************');
     }
 });
+
+test("run", function(){
+    var layout = this.layout;
+
+    layout.coarsening();
+    layout.extending();
+
+    var iter = 0;
+    while (iter <= layout.maxIterations) {
+        layout.step(0.9);
+        iter++;
+        console.log(iter);
+    }
+
+    layout.redraw();
+
+});

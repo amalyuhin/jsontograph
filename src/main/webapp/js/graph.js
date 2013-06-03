@@ -13,6 +13,7 @@ function Graph() {
     this.edgesCount = 0;
     this.edgesMap = [];
     this.adjacency = [];
+    this.adjList = [];
 }
 
 Graph.prototype = {
@@ -50,10 +51,19 @@ Graph.prototype = {
         var adjList = [];
 
         if (typeof this.adjacency[id] !== 'undefined') {
-            adjList = this.adjacency[id];
+            for (var i = 0; i < this.adjacency[id].length; i++) {
+                var node = this.getNode(i);
+                if (typeof node === 'undefined') continue;
+
+                adjList[node.id] = node;
+            }
         }
 
         return adjList;
+    },
+
+    nodeAt: function (i) {
+        return this.adjList[i];
     },
 
     addEdge: function (v, u, options) {
@@ -154,9 +164,9 @@ Graph.prototype = {
 
     hasEdge: function (v_id, u_id) {
         return (
-            (typeof(this.edgesMap[v_id]) !== 'undefined' && this.edgesMap[v_id][u_id] === true) ||
-                (typeof(this.edgesMap[u_id]) !== 'undefined' && this.edgesMap[u_id][v_id] === true)
-            );
+            (typeof this.edgesMap[v_id] !== 'undefined' && this.edgesMap[v_id][u_id] === true) ||
+            (typeof this.edgesMap[u_id] !== 'undefined' && this.edgesMap[u_id][v_id] === true)
+        );
     },
 
     getEdge: function (v_id, u_id) {
@@ -277,6 +287,7 @@ function Vertex(label, options) {
     this.neighbours = [];
     this.distTable = null;
     this.adjList = [];
+    this.targets = []
 
     this.events = [];
 }
@@ -413,17 +424,20 @@ Edge.prototype = {
 
 var cloner = {
      _clone: function _clone(obj) {
+         var out;
+         var value;
+
          if (obj instanceof Array) {
-             var out = [];
+             out = [];
              for (var i = 0, len = obj.length; i < len; i++) {
-                 var value = obj[i];
+                 value = obj[i];
                  out[i] = (value !== null && typeof value === "object") ? _clone(value) : value;
              }
          } else {
-             var out = {};
+             out = {};
              for (var key in obj) {
                  if (obj.hasOwnProperty(key)) {
-                     var value = obj[key];
+                     value = obj[key];
                      out[key] = (value !== null && typeof value === "object") ? _clone(value) : value;
                  }
              }
