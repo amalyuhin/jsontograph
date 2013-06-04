@@ -2,8 +2,10 @@
 <html>
 <head>
     <meta charset="utf-8">
-
     <title>Graph Draw</title>
+
+    <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
     <link rel="stylesheet" type="text/css" href="css/tipsy.css">
     <link rel="stylesheet" type="text/css" href="css/myTip.css">
     <link rel="stylesheet" type="text/css" href="css/style.css">
@@ -165,10 +167,15 @@
                     data: data,
                     dataType: 'json',
                     success: function(json) {
-                        try {
-                            init(json);
-                        } catch (e) {
-                            alert(e);
+                        if (json.status == 'error') {
+                            alert(json.message);
+                        }
+                        if (json.status == 'success') {
+                            try {
+                                init(json);
+                            } catch (e) {
+                                alert(e);
+                            }
                         }
                     },
                     complete: function(){
