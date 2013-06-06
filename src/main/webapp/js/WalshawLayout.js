@@ -15,7 +15,7 @@ function WalshawLayout(canvas, graph) {
 
     this.area = this.canvasWidth * this.canvasHeight;
     this.k = 0;
-    this.maxIterations = 80;
+    this.maxIterations = 150;
 
     this.graphCollection = [];
 }
@@ -345,16 +345,16 @@ WalshawLayout.prototype = {
     run: function () {
         console.time('Start algorithm execution');
 
-        try {
+        /*try {
             this.coarsening();
             this.extending();
 
-            /* var iter = 0;
-             while (iter <= this.maxIterations) {
-             this.step(0.9);
-             iter++;
-             }
-             */
+          *//*  var iter = 0;
+            while (iter <= this.maxIterations) {
+                this.step();
+                iter++;
+            }*//*
+
             this.redraw();
 
         } catch (e) {
@@ -362,25 +362,30 @@ WalshawLayout.prototype = {
 
         } finally {
             console.timeEnd('Start algorithm execution');
-        }
+        }*/
 
 
-        /*var self = this;
-         var iter = 0;
-         var animate = function () {
-         self.reqAnimId = requestAnimationFrame(animate);
+        var p1 = Point.random();
+        var p2 = Point.random();
 
-         self.step(0.9);
-         self.redraw();
+        this.k = 100;
 
-         iter++;
+        var self = this;
+        var iter = 0;
+        var animate = function () {
+            self.reqAnimId = requestAnimationFrame(animate);
 
-         if (iter > self.maxIterations) {
-         self.stop();
-         }
-         };
+            self.step();
+            self.redraw();
 
-         animate();*/
+            iter++;
+
+            if (iter > self.maxIterations) {
+                self.stop();
+            }
+        };
+
+        animate();
     }
 };
 
