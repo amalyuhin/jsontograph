@@ -1,6 +1,9 @@
 package ru.amalyuhin.managers;
 
 import com.hp.hpl.jena.rdf.model.*;
+import org.json.simple.JSONArray;
+import ru.amalyuhin.utils.JSONExtendedArray;
+import ru.amalyuhin.utils.JSONExtendedObject;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -56,12 +59,14 @@ public class OntologyManager {
     public static List<Map<String, String>> getLinks(Model model, List<String> nodes) {
         List<Map<String, String>> links = new ArrayList<Map<String, String>>();
 
-        for (StmtIterator i = model.listStatements(null, null, (RDFNode) null); i.hasNext(); ) {
+        for (StmtIterator i = model.listStatements(); i.hasNext(); ) {
             Statement stmt = i.nextStatement();
             Map<String, String> map = new HashMap<String, String>();
 
             Integer fromIndex = nodes.indexOf(getLabel(stmt.getSubject()));
             Integer toIndex = nodes.indexOf(getLabel(stmt.getObject()));
+
+            System.out.println(stmt.getPredicate().toString());
 
             if (fromIndex != -1 && toIndex != -1) {
                 map.put("from", String.valueOf(fromIndex));
@@ -73,6 +78,46 @@ public class OntologyManager {
         }
 
         return links;
+    }
+
+    public static JSONExtendedObject getDataAsJson(Model model) {
+        List<String> nodes = new ArrayList<String>();
+        List<Map<String, String>> links = new ArrayList<Map<String, String>>();
+
+        for (StmtIterator i = model.listStatements(null, null, (RDFNode) null); i.hasNext(); ) {
+            Statement stmt = i.nextStatement();
+
+            String subject = getLabel(stmt.getSubject());
+            if (!nodes.contains(subject)) {
+                nodes.add(subject);
+            }
+
+            String object = getLabel(stmt.getObject());
+            if (!nodes.contains(object)) {
+                nodes.add(object);
+            }
+
+            int fromIndex = nodes.indexOf(subject);
+            int toIndex = nodes.indexOf(object);
+
+            if (fromIndex != -1 && toIndex != -1) {
+                Map<String, String> map = new HashMap<String, String>();
+
+                map.put("from", String.valueOf(fromIndex));
+                map.put("to", String.valueOf(toIndex));
+                map.put("type", getLabel(stmt.getPredicate()));
+
+                links.add(map);
+            }
+        }
+
+        JSONExtendedObject json = new JSONExtendedObject();
+        JSONArray jsonNodes = JSONExtendedArray.fromNodes(nodes);
+
+        json.put("nodes", jsonNodes);
+        json.put("links", links);
+
+        return json;
     }
 
     /**

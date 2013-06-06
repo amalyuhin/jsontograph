@@ -50,10 +50,10 @@ Graph.prototype = {
     getAdjList: function (id) {
         var adjList = [];
 
-        if (typeof this.adjacency[id] !== 'undefined') {
+        if (this.adjacency[id] !== undefined) {
             for (var i = 0; i < this.adjacency[id].length; i++) {
                 var node = this.getNode(i);
-                if (typeof node === 'undefined') continue;
+                if (node === undefined) continue;
 
                 adjList[node.id] = node;
             }
@@ -90,10 +90,8 @@ Graph.prototype = {
             this.adjacency[v.id][u.id] = edge;
             this.adjacency[u.id][v.id] = edge;
 
-            /*v.addNode(u);
-            u.addNode(v);
             v.degree++;
-            u.degree++;*/
+            u.degree++;
 
             this.edgesCount++;
         }
@@ -295,7 +293,7 @@ function Vertex(label, options) {
     this.neighbours = [];
     this.distTable = null;
     this.adjList = [];
-    this.targets = []
+    this.targets = [];
 
     this.events = [];
 }

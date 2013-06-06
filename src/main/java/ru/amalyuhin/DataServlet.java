@@ -54,7 +54,13 @@ public class DataServlet extends HttpServlet {
             String result;
 
             if (req.getParameterMap().containsKey("query")) {
-                result = parseModelByQuery(model, req.getParameter("query"));
+                Query q = QueryFactory.create(req.getParameter("query"));
+
+                if (q.isConstructType()) {
+                    result = parseModelByConstructQuery(model, q);
+                } else {
+                    result = parseModelByQuery(model, q);
+                }
             } else {
                 result = parseModel(model);
             }
@@ -137,8 +143,25 @@ public class DataServlet extends HttpServlet {
         return json.toJSONString();
     }
 
-    private String parseModelByQuery(Model model, String queryString) {
-        Query query = QueryFactory.create(queryString);
+    private String parseModelByConstructQuery(Model model, Query query) {
+        QueryExecution qe = QueryExecutionFactory.create(query, model);
+        Model resultModel;
+
+        try {
+            resultModel = qe.execConstruct() ;
+        } catch (Exception e) {
+            return errorJsonResponse(e.getMessage());
+        } finally {
+            qe.close();
+        }
+
+        JSONExtendedObject json = OntologyManager.getDataAsJson(resultModel);
+        json.put("status", "success");
+
+        return json.toJSONString();
+    }
+
+    private String parseModelByQuery(Model model, Query query) {
         QueryExecution qe = QueryExecutionFactory.create(query, model);
 
         List<String> nodes = new ArrayList<String>();

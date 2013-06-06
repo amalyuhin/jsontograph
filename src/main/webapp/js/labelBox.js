@@ -1,4 +1,4 @@
-function labelBox(canvas, labelColors) {
+function LabelBox(canvas, labelColors) {
   this.canvas = canvas;
   this.context = canvas.getContext("2d");
   this.canvasWidth = canvas.getAttribute('width');
@@ -13,7 +13,7 @@ function labelBox(canvas, labelColors) {
   this.init();
 }
 
-labelBox.prototype = {
+LabelBox.prototype = {
   init: function () {
     this.boxHeight = 15;
     this.boxOffsetX = 30;

@@ -98,139 +98,22 @@ test("extending", function(){
     equals(this.layout.graph.getVerticesCount(), 5);
 });
 
-test("process", function(){
-    var layout = this.layout;
-
-    layout.coarsening();
-
-    var graph = layout.graph;
-    var length = layout.graphCollection.length - 1;
-
-    for (var m = layout.graphCollection.length - 1; m >= 0; m--) {
-        console.log('l:', m);
-
-        for (var n = layout.graphCollection[m].vertices.length; n >= 0; n--) {
-            var q = layout.graphCollection[m].vertices[n];
-            if (typeof q === 'undefined') continue;
-
-            console.log('   ', q.id, ':', q.label);
-
-        }
-    }
-
-    console.log('--------------------');
-
-    for (var i = 0; i < layout.graph.vertices.length; i++) {
-        var v = layout.graph.getNode(i);
-        if (typeof v === 'undefined') continue;
-
-        if (v.isCluster) {
-            console.log('node:', v.id, v.label);
-            console.log('   ', 'target1:', v.clusterData.targets[0].node.id, v.clusterData.targets[0].node.label);
-            console.log('   ', 'neighbors1:', v.clusterData.targets[0].neighbors);
-            console.log('   ', 'target2:', v.clusterData.targets[1].node.id, v.clusterData.targets[1].node.label);
-            console.log('   ', 'neighbors2:', v.clusterData.targets[1].neighbors);
-        }
-    }
-
-    function addClusterNeighbors(g, v, adjacencies) {
-        console.log('graph:');
-        for (var w = 0; w < g.vertices.length; w++) {
-            var p = g.getNode(w);
-
-            if (typeof p !== 'undefined') {
-                console.log('   ', 'node:', p.id, p.label);
-            }
-        }
-
-        for (var i = 0; i < g.vertices.length; i++) {
-            var u = g.getNode(i);
-            if (typeof u === 'undefined' || v.id === u.id) continue;
-
-            var e = adjacencies[u.id];
-
-            console.log('options:', e);
-
-            if (typeof e !== 'undefined' && !g.hasEdge(v.id, u.id)) {
-                console.log('add edge:', v.label, ' - ', u.label);
-                g.addEdge(v, u, e);
-
-            } else if (g.hasEdge(v.id, u.id) && typeof e === 'undefined') {
-                console.log('remove edge:', v.label, ' - ', u.label);
-                g.removeEdge(v.id, u.id);
-            }
-        }
-    }
-
-    for (var p = layout.graphCollection.length-1; p > 0; p--) {
-        var graphForVertices = layout.graphCollection[p];
-
-        console.log('level:', p);
-
-        for (var i = graphForVertices.vertices.length-1; i >= 0; i--) {
-
-            var cluster = graphForVertices.vertices[i];
-            if (typeof cluster === 'undefined') continue;
-
-            if (cluster.isCluster && cluster.clusterData.level === p &&
-                typeof graph.getNode(cluster.clusterData.targets[0].node.id) === 'undefined' &&
-                typeof graph.getNode(cluster.clusterData.targets[1].node.id) === 'undefined'
-            ) {
-                var v = new Vertex(cluster.clusterData.targets[0].node.label);
-
-                console.log('cluster:', cluster.id, cluster.label);
-
-                v.id = cluster.clusterData.targets[0].node.id;
-                /*v.isCluster = cluster.targets[0].node.isCluster;
-                v.targets = cloner.clone(cluster.targets[0].node.targets);*/
-                v.pos = new Point(cluster.pos.x, cluster.pos.y);
-                v.setWeight(cluster.clusterData.targets[0].node.weight);
-                graph.vertices[v.id] = v;
-                graph.verticesCount++;
-
-                console.log('add node', v.id, v.label);
-
-                var u = new Vertex(cluster.clusterData.targets[1].node.label);
-
-                u.id = cluster.clusterData.targets[1].node.id;
-              /*  u.isCluster = cluster.targets[1].node.isCluster;
-                u.targets = cloner.clone(cluster.targets[1].node.targets);*/
-                u.pos = new Point(cluster.pos.x, cluster.pos.y);
-                u.setWeight(cluster.clusterData.targets[1].node.weight);
-                graph.vertices[u.id] = u;
-                graph.verticesCount++;
-
-                console.log('add node', u.id, u.label);
-
-                var adjacencies1 = cloner.clone(cluster.clusterData.targets[0].neighbors);
-                var adjacencies2 = cloner.clone(cluster.clusterData.targets[1].neighbors);
-
-                graph.removeVertex(cluster.id);
-
-                console.log('renove node', cluster.id, cluster.label);
-
-                addClusterNeighbors(graph, v, adjacencies1);
-                addClusterNeighbors(graph, u, adjacencies2);
-
-                console.log('--------------------');
-            }
-        }
-
-        for (var i = 0; i < layout.graph.vertices.length; i++) {
-            var v = layout.graph.getNode(i);
-            if (typeof v === 'undefined') continue;
-
-            console.log('node:', v.id, v.label);
-            console.log('   ', 'is_cluster:', v.isCluster);
-            console.log('   ', 'targets:', v.targets);
-        }
-
-        console.log('*********************');
-    }
-});
-
 test("run", function(){
-    var layout = this.layout;
+    var graph = new Graph();
+    var count = 100;
+
+    for (var i = 0; i < count; i++) {
+        graph.addVertex(new Vertex(i+1));
+    }
+
+    var v = graph.getNode(0);
+    graph.vertices.forEach(function(u){
+        if (v.id !== u.id) {
+            graph.addEdge(v, u);
+        }
+    });
+
+    var layout = new WalshawLayout(document.createElement('canvas'), graph);
 
     layout.coarsening();
     layout.extending();
@@ -242,7 +125,10 @@ test("run", function(){
         console.log(iter);
     }
 
-    layout.redraw();
+    layout.graph.vertices.forEach(function(v){
+        console.log('v:', v.id, v.pos.x, v.pos.y);
+    });
+    //layout.redraw();
 
 });
 
@@ -403,7 +289,7 @@ test("algorithm", function() {
                         // Добавляем ребра которых не хватает
                         if (!graph.addEdge(cluster.id, u.id) &&
                             graph.hasEdge(v.id, u.id) || graph.hasEdge(neighbor.id, u.id)
-                        ) {
+                            ) {
                             console.log('add edge', cluster.id, u.id);
                             graph.addEdge(cluster, u);
                         }
@@ -425,17 +311,17 @@ test("algorithm", function() {
         }
 
         /*var v1, v2;
-        for (var key in graph.vertices) if (graph.vertices.hasOwnProperty(key)) {
-            graph.vertices[key].pos = Point.random();
+         for (var key in graph.vertices) if (graph.vertices.hasOwnProperty(key)) {
+         graph.vertices[key].pos = Point.random();
 
-            if (!v1) {
-                v1 = graph.vertices[key].pos;
-            } else {
-                v2 = graph.vertices[key].pos;
-            }
-        }
+         if (!v1) {
+         v1 = graph.vertices[key].pos;
+         } else {
+         v2 = graph.vertices[key].pos;
+         }
+         }
 
-        layout.k = v1.subtract(v2).magnitude();*/
+         layout.k = v1.subtract(v2).magnitude();*/
 
         if (vertexCount > 2) {
             throw "Граф не является связным. Процесс будет завершен.";
@@ -460,4 +346,309 @@ test("algorithm", function() {
     coarsening();
 
     equals(graph.getVerticesCount(), 2);
+});
+
+test("dataTest", function(){
+    expect(2);
+
+    var graph = new Graph();
+    var count = 10;
+
+    for (var i = 0; i < count; i++) {
+        graph.addVertex(new Vertex(i+1));
+    }
+
+    var v = graph.getNode(0);
+    graph.vertices.forEach(function(u){
+        if (v.id !== u.id) {
+            graph.addEdge(v, u);
+        }
+    });
+
+    var layout = new WalshawLayout(document.createElement('canvas'), graph);
+
+    layout.coarsening();
+    equals(graph.getVerticesCount(), 2);
+
+    function cool (t) {
+        return t * 0.001;
+    }
+
+    function step() {
+        var graph = layout.graph;
+        var verticesNb = graph.vertices.length;
+        var oldPos = [];
+        var v, u, delta, i, j;
+        var t = 0.9;
+
+        var converged = false;
+
+        while (!converged) {
+            converged = true;
+
+            graph.vertices.forEach(function(node){
+                oldPos[node.id] = new Point(node.pos.x, node.pos.y);
+            });
+
+            for (i = 0; i < verticesNb; i++) {
+                v = graph.getNode(i);
+                if (v === undefined) continue;
+
+                var disp = new Point(0, 0);
+
+                for (j = 0; j < verticesNb; j++) {
+                    u = graph.getNode(j);
+                    if (i === j || u === undefined) continue;
+
+                    delta = u.pos.subtract(v.pos);
+                    if (delta.magnitude() < 0.1) {
+                        delta = new Point((0.1 + Math.random() * 0.1), (0.1 + Math.random() * 0.1));
+                    }
+
+                    var t1 = delta.normalize().multiply(layout.fr(delta.magnitude(), u.getWeight()));
+                    disp = disp.add(t1);
+                    console.log('t1:', t1.x, t1.y);
+                }
+
+                for (j = 0; j < verticesNb; j++) {
+                    u = graph.getNode(j);
+                    if (typeof u === 'undefined' || !graph.hasEdge(v.id, u.id)) continue;
+
+                    delta = u.pos.subtract(v.pos);
+                    if (delta.magnitude() < 0.1) {
+                        delta = new Point((0.1 + Math.random() * 0.1), (0.1 + Math.random() * 0.1));
+                    }
+
+                    var t2 = delta.normalize().multiply(layout.fa(delta.magnitude()));
+                    disp = disp.add(t2);
+                    console.log('t2:', t2.x, t2.y);
+                }
+
+                //if (disp.magnitude() > 0) {
+                var newPos = v.pos.add(disp.normalize().multiply(Math.min(t, disp.magnitude())));
+                v.updatePosition(newPos);
+                //}
+
+                //console.log(v.pos.subtract(oldPos[v.id]).magnitude(), '>', (layout.k * 0.01), ":", (v.pos.subtract(oldPos[v.id]).magnitude() > (layout.k * 0.01)));
+
+                if (v.pos.subtract(oldPos[v.id]).magnitude() > (0.0001)) {
+                    converged = false;
+                }
+            }
+
+            t = cool(t);
+        }
+    }
+
+    function extending() {
+        function hasEdge(g, vId, uId) {
+            return ((g.edgesMap[vId] != undefined && g.edgesMap[vId][uId]) ||
+                (g.edgesMap[uId] != undefined && g.edgesMap[uId][vId]));
+        }
+
+        function getEdge(g, vId, uId) {
+            var edgesLength = g.edges.length;
+
+            for (var i = 0; i < edgesLength; i++) {
+                var e = g.edges[i];
+                if (e === undefined) continue;
+
+                if ((e.v.id === vId && e.u.id === uId) || (e.v.id === uId && e.u.id === vId)) {
+                    return e;
+                }
+            }
+
+            return null;
+        }
+
+        var graph = layout.graph;
+        var minLevel = 0;
+        var g;
+
+        for (var l = layout.graphCollection.length - 1; l >= minLevel; l--) {
+            g = layout.graphCollection[l];
+
+            if (l > minLevel) {
+                for (var i = g.vertices.length-1; i >= 0; i--) {
+                    var cluster = g.vertices[i];
+                    if (cluster === undefined) continue;
+
+                    if (cluster.isCluster && cluster.clusterData.level === l &&
+                        graph.getNode(cluster.clusterData.targets[0].node.id) === undefined &&
+                        graph.getNode(cluster.clusterData.targets[1].node.id) === undefined
+                        ) {
+                        var v = new Vertex(cluster.clusterData.targets[0].node.label);
+
+                        v.id = cluster.clusterData.targets[0].node.id;
+                        v.pos = new Point(cluster.pos.x, cluster.pos.y);
+                        v.setWeight(cluster.clusterData.targets[0].node.weight);
+                        graph.vertices[v.id] = v;
+                        graph.verticesCount++;
+
+                        var u = new Vertex(cluster.clusterData.targets[1].node.label);
+
+                        u.id = cluster.clusterData.targets[1].node.id;
+                        u.pos = new Point(cluster.pos.x, cluster.pos.y);
+                        u.setWeight(cluster.clusterData.targets[1].node.weight);
+                        graph.vertices[u.id] = u;
+                        graph.verticesCount++;
+
+                        graph.removeVertex(cluster.id);
+                    }
+                }
+
+            } else {
+                for (var j = g.vertices.length-1; j >= 0; j--) {
+                    if (graph.vertices[j] === undefined || g.vertices[j] === undefined) continue;
+
+                    for (var k = g.vertices.length-1; k >= 0; k--) {
+                        if (j === k || graph.vertices[k] === undefined || g.vertices[k] === undefined) continue;
+
+                        if (hasEdge(g, j, k) && !hasEdge(graph, j, k)) {
+                            var e = getEdge(g, j, k);
+
+                            if (e === null) {
+                                graph.addEdge(graph.vertices[j], graph.vertices[k]);
+                            } else {
+                                graph.addEdge(graph.vertices[j], graph.vertices[k], e.options);
+                            }
+                        }
+
+                        if (!hasEdge(g, j, k) && hasEdge(graph, j, k)) {
+                            graph.removeEdge(j, k);
+                        }
+                    }
+                }
+            }
+
+            step();
+
+            layout.k = layout.k * Math.sqrt(4/5);
+            delete layout.graphCollection[l];
+        }
+
+        delete layout.graphCollection;
+    }
+
+    extending();
+    equals(graph.getVerticesCount(), count);
+
+    graph.vertices.forEach(function(v){
+        console.log('v:', v.id, v.pos.x, v.pos.y);
+    });
+});
+
+
+test("test1", function(){
+    var layout = this.layout;
+
+    function extending() {
+        function hasEdge(g, vId, uId) {
+            return ((g.edgesMap[vId] != undefined && g.edgesMap[vId][uId]) ||
+                (g.edgesMap[uId] != undefined && g.edgesMap[uId][vId]));
+        }
+
+        function getEdge(g, vId, uId) {
+            var edgesLength = g.edges.length;
+
+            for (var i = 0; i < edgesLength; i++) {
+                var e = g.edges[i];
+                if (e === undefined) continue;
+
+                if ((e.v.id === vId && e.u.id === uId) || (e.v.id === uId && e.u.id === vId)) {
+                    return e;
+                }
+            }
+
+            return null;
+        }
+
+        var graph = layout.graph;
+        var minLevel = 0;
+        var g;
+
+        for (var l = layout.graphCollection.length - 1; l >= minLevel; l--) {
+            g = layout.graphCollection[l];
+
+            if (l > minLevel) {
+                for (var i = g.vertices.length-1; i >= 0; i--) {
+                    var cluster = g.vertices[i];
+                    if (cluster === undefined) continue;
+
+                    if (cluster.isCluster && cluster.clusterData.level === l &&
+                        graph.getNode(cluster.clusterData.targets[0].node.id) === undefined &&
+                        graph.getNode(cluster.clusterData.targets[1].node.id) === undefined
+                        ) {
+                        var v = new Vertex(cluster.clusterData.targets[0].node.label);
+
+                        v.id = cluster.clusterData.targets[0].node.id;
+                        v.pos = new Point(cluster.pos.x, cluster.pos.y);
+                        v.setWeight(cluster.clusterData.targets[0].node.weight);
+                        graph.vertices[v.id] = v;
+                        graph.verticesCount++;
+
+                        var u = new Vertex(cluster.clusterData.targets[1].node.label);
+
+                        u.id = cluster.clusterData.targets[1].node.id;
+                        u.pos = new Point(cluster.pos.x, cluster.pos.y);
+                        u.setWeight(cluster.clusterData.targets[1].node.weight);
+                        graph.vertices[u.id] = u;
+                        graph.verticesCount++;
+
+                        graph.removeVertex(cluster.id);
+                    }
+                }
+
+            } else {
+                for (var j = g.vertices.length-1; j >= 0; j--) {
+                    if (graph.vertices[j] === undefined || g.vertices[j] === undefined) continue;
+
+                    for (var k = g.vertices.length-1; k >= 0; k--) {
+                        if (j === k || graph.vertices[k] === undefined || g.vertices[k] === undefined) continue;
+
+                        if (hasEdge(g, j, k) && !hasEdge(graph, j, k)) {
+                            var e = getEdge(g, j, k);
+
+                            if (e === null) {
+                                graph.addEdge(graph.vertices[j], graph.vertices[k]);
+                            } else {
+                                graph.addEdge(graph.vertices[j], graph.vertices[k], e.options);
+                            }
+                        }
+
+                        if (!hasEdge(g, j, k) && hasEdge(graph, j, k)) {
+                            graph.removeEdge(j, k);
+                        }
+                    }
+                }
+            }
+
+            layout.k = layout.k * Math.sqrt(4/7);
+            delete layout.graphCollection[l];
+        }
+
+        delete layout.graphCollection;
+    }
+
+    layout.coarsening();
+
+    var it = 0;
+    layout.graph.vertices.forEach(function(node){
+        if (it < 1) {
+            node.pos.x = 10;
+            node.pos.y = 10;
+        } else {
+            node.pos.x = 35;
+            node.pos.y = 20;
+        }
+    });
+
+    extending();
+
+    var iter = 0;
+    while (iter <= 100) {
+        layout.step();
+        iter++;
+        console.log('------------------');
+    }
 });

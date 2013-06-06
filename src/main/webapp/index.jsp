@@ -13,6 +13,7 @@
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
     <script type="text/javascript" src="js/tooltip.js"></script>
 
+    <script type="text/javascript" src="js/exception/exceptions.js"></script>
     <script type="text/javascript" src="js/labelBox.js"></script>
     <script type="text/javascript" src="js/eventListener.js"></script>
     <script type="text/javascript" src="js/utils.js"></script>
@@ -174,7 +175,11 @@
                             try {
                                 init(json);
                             } catch (e) {
-                                alert(e);
+                                if (e.name == 'InvalidData') {
+                                    alert('Ошибка: ' + e.message);
+                                } else {
+                                    throw e;
+                                }
                             }
                         }
                     },
@@ -198,37 +203,36 @@
             console.time('Generate graph');
 
             var graph = new Graph();
-            var i;
+            var v, u, lc;
 
-            for (i = data.nodes.length - 1; i >= 0; i--) {
-                var node = data.nodes[i];
+            data.nodes.forEach(function(node){
                 graph.addVertex(new Vertex(node.label, { id: node.id }));
-            }
+            });
 
             var lineColors = [];
-            for (i = data.links.length - 1; i >= 0; i--) {
-                var v = graph.vertices[data.links[i].from];
-                var u = graph.vertices[data.links[i].to];
+            data.links.forEach(function(link){
+                v = graph.getNode(link.from);
+                u = graph.getNode(link.to);
 
-                if (v && u) {
-                    var lc = lineColors[data.links[i].type];
-                    if (!lc) {
+                if (v != undefined && u != undefined) {
+                    lc = lineColors[link.type];
+                    if (lc == undefined) {
                         lc = "rgba("+Math.round(Math.random()*255)+", "+Math.round(Math.random()*255)+", "+Math.round(Math.random()*255)+", .6)";
-                        lineColors[data.links[i].type] = lc;
+                        lineColors[link.type] = lc;
                     }
 
                     graph.addEdge(v, u, {lineColor: lc});
                 }
-            }
+            });
 
             var canv = document.getElementById('labelBoxes');
-            var box = new labelBox(canv, lineColors);
+            var box = new LabelBox(canv, lineColors);
             box.draw();
 
             console.timeEnd('Generate graph');
 
             if (!graph.vertices.length) {
-                throw 'Нет данных для визуализации.';
+                throw new InvalidDataError('Нет данных для визуализации.');
             }
 
             console.log('Vertices count: ' + graph.vertices.length);

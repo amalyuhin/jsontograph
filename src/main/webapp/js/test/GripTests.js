@@ -44,7 +44,7 @@ module("Grip", {
 });
 
 test("buildMisFiltration", function(){
-    var subsets = this.layout.buildMisFiltration();
+    var subsets = this.layout.calculateNodeFiltering();
 
     for (var i = 0; i < subsets.length; i++) {
         console.log('subset:', i);
@@ -57,7 +57,7 @@ test("buildMisFiltration", function(){
 
 test("myNodeNeighbours", function(){
     var layout = this.layout;
-    var subsets = layout.buildMisFiltration();
+    var subsets = layout.calculateNodeFiltering();
     var currentSet = subsets[subsets.length - 1];
 
     for (var l = 0; l < subsets.length; l++) {

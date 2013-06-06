@@ -26,19 +26,31 @@ WalshawLayout.prototype = {
     },
 
     fa: function (x) {
-        return Math.pow(x, 2) / this.k;
+        return Math.pow(x, 2)*3 / this.k;
     },
 
     cool: function (t) {
         return t * 0.9;
     },
 
-    addGraph: function (graph) {
-        this.graphCollection[this.graphCollection.length] = {
-            vertices: cloner.clone(graph.vertices),
-            edges: cloner.clone(graph.edges),
-            edgesMap: cloner.clone(graph.edgesMap)
-        };
+    addGraph: function (graph, isFirst) {
+        isFirst = isFirst || false;
+
+        var obj;
+        if (isFirst) {
+            obj = {
+                vertices: cloner.clone(graph.vertices),
+                edgesMap: cloner.clone(graph.edgesMap),
+                edges: cloner.clone(graph.edges)
+            };
+        } else {
+            obj  = {
+                vertices: cloner.clone(graph.vertices),
+                edgesMap: cloner.clone(graph.edgesMap)
+            };
+        }
+
+        this.graphCollection[this.graphCollection.length] = obj;
     },
 
     getFirstNeighbor: function (id) {
@@ -83,7 +95,7 @@ WalshawLayout.prototype = {
         var isMarked = [];
 
         // Добавляем исходный граф в коллекцию
-        this.addGraph(graph);
+        this.addGraph(graph, true);
 
         // Повторяем, пока количество вершин больше 2
         var level = 1;
@@ -133,8 +145,14 @@ WalshawLayout.prototype = {
                         if (typeof u === 'undefined') continue;
 
                         // Добавляем ребра которых не хватает
-                        if (graph.hasEdge(v.id, u.id) || graph.hasEdge(neighbor.id, u.id)) {
-                            graph.addEdge(cluster, u);
+                        if (graph.hasEdge(i, k) || graph.hasEdge(neighbor.id, k)) {
+                            //graph.addEdge(cluster, u);
+                            var map = graph.edgesMap;
+
+                            map[cluster.id] = map[cluster.id] || [];
+                            map[u.id] = map[u.id] || [];
+                            map[cluster.id][u.id] = true;
+                            map[u.id][cluster.id] = true;
                         }
                     }
 
@@ -170,7 +188,7 @@ WalshawLayout.prototype = {
     extending: function () {
         function hasEdge(g, vId, uId) {
             return ((g.edgesMap[vId] != undefined && g.edgesMap[vId][uId]) ||
-                    (g.edgesMap[uId] != undefined && g.edgesMap[uId][vId]));
+                (g.edgesMap[uId] != undefined && g.edgesMap[uId][vId]));
         }
 
         function getEdge(g, vId, uId) {
@@ -203,7 +221,7 @@ WalshawLayout.prototype = {
                     if (cluster.isCluster && cluster.clusterData.level === l &&
                         graph.getNode(cluster.clusterData.targets[0].node.id) === undefined &&
                         graph.getNode(cluster.clusterData.targets[1].node.id) === undefined
-                    ) {
+                        ) {
                         var v = new Vertex(cluster.clusterData.targets[0].node.label);
 
                         v.id = cluster.clusterData.targets[0].node.id;
@@ -254,6 +272,8 @@ WalshawLayout.prototype = {
                 }
             }
 
+            this.step();
+
             this.k *= Math.sqrt(4/5);
             delete this.graphCollection[l];
         }
@@ -261,10 +281,11 @@ WalshawLayout.prototype = {
         delete this.graphCollection;
     },
 
-    step: function (t) {
+    step: function () {
         var graph = this.graph;
         var verticesNb = graph.vertices.length;
         var v, u, delta, i, j;
+        var t = 9;
 
         var converged = false;
 
@@ -294,16 +315,16 @@ WalshawLayout.prototype = {
                 }
 
                 /*for (j = 0; j < verticesNb; j++) {
-                    u = graph.getNode(j);
-                    if (typeof u === 'undefined' || !graph.hasEdge(v.id, u.id)) continue;
+                 u = graph.getNode(j);
+                 if (typeof u === 'undefined' || !graph.hasEdge(v.id, u.id)) continue;
 
-                    delta = u.pos.subtract(v.pos);
-                    if (delta.magnitude() < 0.1) {
-                        delta = new Point((0.1 + Math.random() * 0.1), (0.1 + Math.random() * 0.1));
-                    }
+                 delta = u.pos.subtract(v.pos);
+                 if (delta.magnitude() < 0.1) {
+                 delta = new Point((0.1 + Math.random() * 0.1), (0.1 + Math.random() * 0.1));
+                 }
 
-                    disp = disp.add(delta.normalize().multiply(this.fa(delta.magnitude())));
-                }*/
+                 disp = disp.add(delta.normalize().multiply(this.fa(delta.magnitude())));
+                 }*/
 
                 var oldPos = new Point(v.pos.x, v.pos.y);
 
@@ -328,12 +349,12 @@ WalshawLayout.prototype = {
             this.coarsening();
             this.extending();
 
-            var iter = 0;
-            while (iter <= this.maxIterations) {
-                this.step(0.9);
-                iter++;
-            }
-
+            /* var iter = 0;
+             while (iter <= this.maxIterations) {
+             this.step(0.9);
+             iter++;
+             }
+             */
             this.redraw();
 
         } catch (e) {
@@ -345,21 +366,21 @@ WalshawLayout.prototype = {
 
 
         /*var self = this;
-        var iter = 0;
-        var animate = function () {
-            self.reqAnimId = requestAnimationFrame(animate);
+         var iter = 0;
+         var animate = function () {
+         self.reqAnimId = requestAnimationFrame(animate);
 
-            self.step(0.9);
-            self.redraw();
+         self.step(0.9);
+         self.redraw();
 
-            iter++;
+         iter++;
 
-            if (iter > self.maxIterations) {
-                self.stop();
-            }
-        };
+         if (iter > self.maxIterations) {
+         self.stop();
+         }
+         };
 
-        animate();*/
+         animate();*/
     }
 };
 
